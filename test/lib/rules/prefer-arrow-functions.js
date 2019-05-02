@@ -116,7 +116,7 @@ tester.run('lib/rules/prefer-arrow-functions', rule, {
       ['var foo = function () { return () => false }', 'var foo = () => () => false'],
       ['var foo = async function () { return async () => false }', 'var foo = async () => async () => false'],
 
-      // Make sure we don't obliterate comments/whitespace and only remove newlines when appropriate
+      // Make sure we don't obliterate whitespace and only remove newlines when appropriate
       ['var foo = function() {\n  return "World";\n}', 'var foo = () => "World"'],
       ['var foo = async function() {\n  return "World";\n}', 'var foo = async () => "World"'],
       ['var foo = function() {\n  return "World"\n}', 'var foo = () => "World"'],
@@ -125,14 +125,6 @@ tester.run('lib/rules/prefer-arrow-functions', rule, {
       ['async function foo(a) {\n  return 3;\n}', 'const foo = async (a) => 3;'],
       ['function foo(a) {\n  return 3\n}', 'const foo = (a) => 3;'],
       ['async function foo(a) {\n  return 3\n}', 'const foo = async (a) => 3;'],
-      [
-        '/*1*/var/*2*/ /*3*/foo/*4*/ /*5*/=/*6*/ /*7*/function/*8*/ /*9*/x/*10*/(/*11*/a/*12*/, /*13*/b/*14*/)/*15*/ /*16*/{/*17*/ /*18*/return/*19*/ /*20*/false/*21*/;/*22*/ /*23*/}/*24*/;/*25*/',
-        '/*1*/var/*2*/ /*3*/foo/*4*/ /*5*/=/*6*/ /*7*//*8*/ /*9*//*10*/(/*11*/a/*12*/, /*13*/b/*14*/)/*15*/ /*16*/=> /*17*/ /*18*//*19*/ /*20*/false/*21*//*22*/ /*23*//*24*/;/*25*/',
-      ],
-      [
-        '/*1*/function/*2*/ /*3*/foo/*4*/(/*5*/a/*6*/)/*7*/ /*8*/\{/*9*/ /*10*/return/*11*/ /*12*/false/*13*/;/*14*/ /*15*/}/*16*/',
-        '/*1*/const/*2*/ /*3*/foo/*4*/ = (/*5*/a/*6*/)/*7*/ /*8*/=> /*9*/ /*10*//*11*/ /*12*/false/*13*//*14*/ /*15*/;/*16*/'
-      ],
 
       // Make sure we don't mess up inner generator functions
       [
@@ -161,14 +153,6 @@ tester.run('lib/rules/prefer-arrow-functions', rule, {
         'var withLoop = async function() { return async () => { for (i = 0; i < 5; i++) {}}}',
         'var withLoop = async () => async () => { for (i = 0; i < 5; i++) {}}'
       ],
-      [
-        'function withLoop() { return () => { for (i = 0; i < 5; i++) {}} /* foo */; }',
-        'const withLoop = () => () => { for (i = 0; i < 5; i++) {}} /* foo */;'
-      ],
-      [
-        'async function withLoop() { return async () => { for (i = 0; i < 5; i++) {}} /* foo */; }',
-        'const withLoop = async () => async () => { for (i = 0; i < 5; i++) {}} /* foo */;'
-      ]
     ].map(inputOutput => Object.assign(
       {
         errors: ['Prefer using arrow functions over plain functions which only return a value'],
