@@ -40,6 +40,16 @@ tester.run('lib/rules/prefer-arrow-functions', rule, {
     'const foo = { set bar(xyz) {} }',
     'class foo { get bar() { return "test"; } }',
     'class foo { set bar(xyz) { } }',
+    // arguments is unavailable in arrow functions
+    'function bar () {return arguments}',
+    'var foo = function () {return arguments}',
+    'function bar () {console.log(arguments);}',
+    'var foo = function () {console.log(arguments);}',
+    // super() is unavailable in arrow functions
+    'class foo extends bar { constructor() {return super()} }',
+    'class foo extends bar { constructor() {console.log(super())} }',
+    // new.target is unavailable in arrow functions
+    'function Foo() {if (!new.target) throw "Foo() must be called with new";}',
     ...[
       'var foo = (bar) => {return bar();}',
       'var foo = async (bar) => {return bar();}',
@@ -66,8 +76,6 @@ tester.run('lib/rules/prefer-arrow-functions', rule, {
     ].map(singleReturnOnly)
   ],
   invalid: [
-    {code: 'function foo() { return "Hello!"; }', errors: ['Use const or class constructors instead of named functions']},
-    {code: 'function foo() { return arguments; }', errors: ['Use const or class constructors instead of named functions']},
     {code: 'var foo = function() { return "World"; }', errors: ['Prefer using arrow functions over plain functions']},
     {code: '["Hello", "World"].reduce(function(a, b) { return a + " " + b; })', errors: ['Prefer using arrow functions over plain functions']},
     {code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};', errors: ['Prefer using arrow functions over plain functions'], options: [{disallowPrototype:true}]},
@@ -155,7 +163,7 @@ tester.run('lib/rules/prefer-arrow-functions', rule, {
       ],
     ].map(inputOutput => Object.assign(
       {
-        errors: ['Prefer using arrow functions over plain functions which only return a value'],
+        errors: ['Prefer using arrow functions when the function contains only a return'],
         output: inputOutput[1]
       },
       singleReturnOnly(inputOutput[0], inputOutput[2])
