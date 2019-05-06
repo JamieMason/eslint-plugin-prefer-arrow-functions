@@ -53,10 +53,12 @@ const valid = [
     code: 'var foo = async (...args) => args'
   },
   {
-    code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};'
+    code:
+      'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};'
   },
   {
-    code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype = {func: function() {}};'
+    code:
+      'class obj {constructor(foo){this.foo = foo;}}; obj.prototype = {func: function() {}};'
   },
   {
     code: 'var foo = function() { return this.bar; };'
@@ -98,7 +100,8 @@ const valid = [
   },
   // new.target is unavailable in arrow functions
   {
-    code: 'function Foo() {if (!new.target) throw "Foo() must be called with new";}'
+    code:
+      'function Foo() {if (!new.target) throw "Foo() must be called with new";}'
   }
 ];
 
@@ -173,10 +176,15 @@ const validWhenSingleReturnOnly = [
 
 const invalidWhenDisallowPrototypeEnabled = [
   {
-    code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};',
+    code:
+      'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};',
     errors: ['Prefer using arrow functions over plain functions']
   }
-].map(({ code, errors }) => ({ code, errors, options: [{ disallowPrototype: true }] }));
+].map(({ code, errors }) => ({
+  code,
+  errors,
+  options: [{ disallowPrototype: true }]
+}));
 
 const invalidAndHasSingleReturn = [
   // ES6 classes & functions declared in object literals
@@ -350,7 +358,8 @@ const invalidAndHasSingleReturn = [
     output: 'const foo = () => function * gen() { return yield 1; };'
   },
   {
-    code: 'async function foo() { return function * gen() { return yield 1; }; }',
+    code:
+      'async function foo() { return function * gen() { return yield 1; }; }',
     output: 'const foo = async () => function * gen() { return yield 1; };'
   },
 
@@ -360,16 +369,21 @@ const invalidAndHasSingleReturn = [
     output: 'const withLoop = () => () => { for (i = 0; i < 5; i++) {}};'
   },
   {
-    code: 'async function withLoop() { return async () => { for (i = 0; i < 5; i++) {}}}',
-    output: 'const withLoop = async () => async () => { for (i = 0; i < 5; i++) {}};'
+    code:
+      'async function withLoop() { return async () => { for (i = 0; i < 5; i++) {}}}',
+    output:
+      'const withLoop = async () => async () => { for (i = 0; i < 5; i++) {}};'
   },
   {
-    code: 'var withLoop = function() { return () => { for (i = 0; i < 5; i++) {}}}',
+    code:
+      'var withLoop = function() { return () => { for (i = 0; i < 5; i++) {}}}',
     output: 'var withLoop = () => () => { for (i = 0; i < 5; i++) {}}'
   },
   {
-    code: 'var withLoop = async function() { return async () => { for (i = 0; i < 5; i++) {}}}',
-    output: 'var withLoop = async () => async () => { for (i = 0; i < 5; i++) {}}'
+    code:
+      'var withLoop = async function() { return async () => { for (i = 0; i < 5; i++) {}}}',
+    output:
+      'var withLoop = async () => async () => { for (i = 0; i < 5; i++) {}}'
   }
 ];
 
@@ -439,7 +453,8 @@ const invalidAndHasBlockStatement = [
   },
   {
     code: 'async function foo(a) { console.log(a && (3 + a()) ? true : 99); }',
-    output: 'const foo = async (a) => { console.log(a && (3 + a()) ? true : 99); };'
+    output:
+      'const foo = async (a) => { console.log(a && (3 + a()) ? true : 99); };'
   },
 
   // function expressions
@@ -504,8 +519,10 @@ const invalidAndHasBlockStatement = [
 
   // treat inner functions properly
   {
-    code: '["Hello", "World"].forEach(function(a, b) { console.log(a + " " + b); })',
-    output: '["Hello", "World"].forEach((a, b) => { console.log(a + " " + b); })'
+    code:
+      '["Hello", "World"].forEach(function(a, b) { console.log(a + " " + b); })',
+    output:
+      '["Hello", "World"].forEach((a, b) => { console.log(a + " " + b); })'
   },
   {
     code: 'var foo = function () { console.log(() => false); }',
@@ -556,33 +573,45 @@ const invalidAndHasBlockStatement = [
     output: 'const foo = () => { console.log(function * gen() { yield 1; }); };'
   },
   {
-    code: 'async function foo() { console.log(function * gen() { yield 1; }); }',
-    output: 'const foo = async () => { console.log(function * gen() { yield 1; }); };'
+    code:
+      'async function foo() { console.log(function * gen() { yield 1; }); }',
+    output:
+      'const foo = async () => { console.log(function * gen() { yield 1; }); };'
   },
 
   // don't mess with the semicolon in for statements
   {
-    code: 'function withLoop() { console.log(() => { for (i = 0; i < 5; i++) {}}) }',
-    output: 'const withLoop = () => { console.log(() => { for (i = 0; i < 5; i++) {}}) };'
+    code:
+      'function withLoop() { console.log(() => { for (i = 0; i < 5; i++) {}}) }',
+    output:
+      'const withLoop = () => { console.log(() => { for (i = 0; i < 5; i++) {}}) };'
   },
   {
-    code: 'async function withLoop() { console.log(async () => { for (i = 0; i < 5; i++) {}}) }',
+    code:
+      'async function withLoop() { console.log(async () => { for (i = 0; i < 5; i++) {}}) }',
     output:
       'const withLoop = async () => { console.log(async () => { for (i = 0; i < 5; i++) {}}) };'
   },
   {
-    code: 'var withLoop = function() { console.log(() => { for (i = 0; i < 5; i++) {}}) }',
-    output: 'var withLoop = () => { console.log(() => { for (i = 0; i < 5; i++) {}}) }'
+    code:
+      'var withLoop = function() { console.log(() => { for (i = 0; i < 5; i++) {}}) }',
+    output:
+      'var withLoop = () => { console.log(() => { for (i = 0; i < 5; i++) {}}) }'
   },
   {
     code:
       'var withLoop = async function() { console.log(async () => { for (i = 0; i < 5; i++) {}}) }',
-    output: 'var withLoop = async () => { console.log(async () => { for (i = 0; i < 5; i++) {}}) }'
+    output:
+      'var withLoop = async () => { console.log(async () => { for (i = 0; i < 5; i++) {}}) }'
   }
 ];
 
 const ruleTester = new RuleTester({
-  parserOptions: { ecmaFeatures: { jsx: false }, ecmaVersion: 8, sourceType: 'module' }
+  parserOptions: {
+    ecmaFeatures: { jsx: false },
+    ecmaVersion: 8,
+    sourceType: 'module'
+  }
 });
 
 const withOptions = extraOptions => object => ({
@@ -605,13 +634,21 @@ ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
     ...invalidWhenDisallowPrototypeEnabled,
     ...[...invalidAndHasSingleReturn]
       .map(withOptions({ singleReturnOnly: true }))
-      .map(withErrors(['Prefer using arrow functions when the function contains only a return'])),
+      .map(
+        withErrors([
+          'Prefer using arrow functions when the function contains only a return'
+        ])
+      ),
     ...[...invalidAndHasSingleReturn, ...invalidAndHasBlockStatement]
       .map(withOptions({ singleReturnOnly: false }))
       .map(withErrors(['Prefer using arrow functions over plain functions'])),
     ...invalidAndHasSingleReturnWithMultipleMatches
       .map(withOptions({ singleReturnOnly: true }))
-      .map(withErrors(['Prefer using arrow functions when the function contains only a return'])),
+      .map(
+        withErrors([
+          'Prefer using arrow functions when the function contains only a return'
+        ])
+      ),
     ...invalidAndHasSingleReturnWithMultipleMatches
       .map(withOptions({ singleReturnOnly: false }))
       .map(
