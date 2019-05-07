@@ -1,27 +1,24 @@
 {
   "name": "eslint-plugin-prefer-arrow",
-  "version": "1.1.5",
   "description": "Prefer arrow functions in most cases",
-  "main": "index.js",
-  "scripts": {
-    "test": "mocha test/lib/rules"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/TristonJ/eslint-plugin-prefer-arrow.git"
-  },
+  "version": "1.1.5",
   "author": "Triston Jones <contact@tristonjones.com>",
-  "license": "MIT",
-  "peerDependencies": {
-    "eslint": ">=5.0.0"
-  },
   "devDependencies": {
     "eslint": "5.16.0",
     "mocha": "6.1.4"
   },
   "keywords": [
+    "es6",
     "eslint",
-    "eslint-plugin",
-    "es6"
-  ]
+    "eslint-plugin"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "peerDependencies": {
+    "eslint": ">=5.0.0"
+  },
+  "repository": "TristonJ/eslint-plugin-prefer-arrow.git",
+  "scripts": {
+    "test": "mocha test/lib/rules"
+  }
 }
