@@ -4,7 +4,7 @@ const {
   USE_ARROW_WHEN_FUNCTION,
   USE_EXPLICIT,
   USE_IMPLICIT
-} = require('../config');
+} = require('./config');
 
 module.exports = {
   meta: {

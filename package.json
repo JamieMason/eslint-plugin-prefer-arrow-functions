@@ -18,12 +18,12 @@
     "eslint-plugin"
   ],
   "license": "MIT",
-  "main": "index.js",
+  "main": "src/index.js",
   "peerDependencies": {
     "eslint": ">=5.0.0"
   },
   "repository": "JamieMason/eslint-plugin-prefer-arrow-functions.git",
   "scripts": {
-    "test": "mocha test/lib/rules"
+    "test": "mocha ./src"
   }
 }

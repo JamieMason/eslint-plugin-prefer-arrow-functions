@@ -1,13 +1,13 @@
 const RuleTester = require('eslint').RuleTester;
 
-const rule = require('../../../lib/rules/prefer-arrow-functions');
+const rule = require('./prefer-arrow-functions');
 
 const {
   USE_ARROW_WHEN_SINGLE_RETURN,
   USE_ARROW_WHEN_FUNCTION,
   USE_EXPLICIT,
   USE_IMPLICIT
-} = require('../../../lib/config');
+} = require('./config');
 
 const valid = [
   {

@@ -1,7 +1,5 @@
-'use strict';
-
-const { DEFAULT_OPTIONS } = require('./lib/config');
-const preferArrowFunctions = require('./lib/rules/prefer-arrow-functions');
+const { DEFAULT_OPTIONS } = require('./config');
+const preferArrowFunctions = require('./prefer-arrow-functions');
 
 module.exports = {
   rules: {
