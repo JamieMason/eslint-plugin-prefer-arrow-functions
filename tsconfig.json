@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["es2017", "es6"],
+    "module": "commonjs",
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "strict": false,
+    "target": "es5"
+  },
+  "include": ["./package.json", "./src/**/*.ts"],
+  "exclude": ["./src/**/*.spec.ts"]
+}

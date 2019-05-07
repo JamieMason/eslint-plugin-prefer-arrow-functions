@@ -8,9 +8,19 @@
     "Triston Jones (https://github.com/TristonJ)"
   ],
   "devDependencies": {
+    "@types/jest": "24.0.12",
+    "@types/node": "12.0.0",
     "eslint": "5.16.0",
-    "mocha": "6.1.4"
+    "jest": "24.8.0",
+    "prettier": "1.17.0",
+    "rimraf": "2.6.3",
+    "ts-jest": "24.0.2",
+    "tslint": "5.16.0",
+    "typescript": "3.4.5"
   },
+  "files": [
+    "dist"
+  ],
   "homepage": "https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions",
   "keywords": [
     "es6",
@@ -18,12 +28,18 @@
     "eslint-plugin"
   ],
   "license": "MIT",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "peerDependencies": {
     "eslint": ">=5.0.0"
   },
-  "repository": "JamieMason/eslint-plugin-prefer-arrow-functions.git",
+  "repository": "JamieMason/eslint-plugin-prefer-arrow-functions",
   "scripts": {
-    "test": "mocha ./src"
+    "build": "tsc --project .",
+    "format": "prettier --write '**/*.md' './src/**/*.ts' './test/**/*.ts'",
+    "lint": "tslint --fix --project ./tsconfig.json",
+    "prebuild": "rimraf ./dist",
+    "prelint": "npm run format",
+    "prepack": "npm run build",
+    "test": "jest"
   }
 }

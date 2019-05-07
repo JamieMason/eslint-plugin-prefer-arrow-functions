@@ -1,8 +1,8 @@
 # eslint-plugin-prefer-arrow-functions
 
-> An ESLint Plugin to Lint and auto-fix use of Arrow Functions, in all cases where
-> conversion would result in the same behaviour (Arrow Functions do not support
-> `this`, `arguments`, or `new.target` for example).
+> An ESLint Plugin to Lint and auto-fix use of Arrow Functions, in all cases
+> where conversion would result in the same behaviour (Arrow Functions do not
+> support `this`, `arguments`, or `new.target` for example).
 
 [![NPM version](http://img.shields.io/npm/v/eslint-plugin-prefer-arrow-functions.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-prefer-arrow-functions)
 [![NPM downloads](http://img.shields.io/npm/dm/eslint-plugin-prefer-arrow-functions.svg?style=flat-square)](https://www.npmjs.com/package/eslint-plugin-prefer-arrow-functions)

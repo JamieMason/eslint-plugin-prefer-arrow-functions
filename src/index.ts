@@ -1,7 +1,7 @@
-const { DEFAULT_OPTIONS } = require('./config');
-const preferArrowFunctions = require('./prefer-arrow-functions');
+import { DEFAULT_OPTIONS } from './config';
+import preferArrowFunctions from './prefer-arrow-functions';
 
-module.exports = {
+export = {
   rules: {
     'prefer-arrow-functions': preferArrowFunctions
   },

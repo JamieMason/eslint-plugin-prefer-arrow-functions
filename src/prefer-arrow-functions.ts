@@ -1,45 +1,39 @@
-const {
+import {
   DEFAULT_OPTIONS,
-  USE_ARROW_WHEN_SINGLE_RETURN,
   USE_ARROW_WHEN_FUNCTION,
+  USE_ARROW_WHEN_SINGLE_RETURN,
   USE_EXPLICIT,
   USE_IMPLICIT
-} = require('./config');
+} from './config';
 
-module.exports = {
+export default {
   meta: {
     docs: {
-      description: 'prefer arrow functions',
       category: 'emcascript6',
+      description: 'prefer arrow functions',
       recommended: false
     },
     fixable: 'code',
     schema: [
       {
-        type: 'object',
+        additionalProperties: false,
         properties: {
-          disallowPrototype: {
-            type: 'boolean'
-          },
-          singleReturnOnly: {
-            type: 'boolean'
-          },
-          classPropertiesAllowed: {
-            type: 'boolean'
-          },
+          classPropertiesAllowed: { type: 'boolean' },
+          disallowPrototype: { type: 'boolean' },
           returnStyle: {
-            type: 'string',
             default: DEFAULT_OPTIONS.returnStyle,
-            pattern: '^(explicit|implicit|unchanged)$'
-          }
+            pattern: '^(explicit|implicit|unchanged)$',
+            type: 'string'
+          },
+          singleReturnOnly: { type: 'boolean' }
         },
-        additionalProperties: false
+        type: 'object'
       }
     ]
   },
-  create: context => {
+  create: (context) => {
     const options = context.options[0] || {};
-    const getOption = name =>
+    const getOption = (name) =>
       typeof options[name] !== 'undefined'
         ? options[name]
         : DEFAULT_OPTIONS[name];
@@ -49,7 +43,7 @@ module.exports = {
     const returnStyle = getOption('returnStyle');
     const sourceCode = context.getSourceCode();
 
-    const isBlockStatementWithSingleReturn = node => {
+    const isBlockStatementWithSingleReturn = (node) => {
       return (
         node.body.body &&
         node.body.body.length === 1 &&
@@ -57,15 +51,15 @@ module.exports = {
       );
     };
 
-    const isImplicitReturn = node => {
+    const isImplicitReturn = (node) => {
       return node.body && !node.body.body;
     };
 
-    const returnsImmediately = node => {
+    const returnsImmediately = (node) => {
       return isBlockStatementWithSingleReturn(node) || isImplicitReturn(node);
     };
 
-    const getBodySource = node => {
+    const getBodySource = (node) => {
       if (
         isBlockStatementWithSingleReturn(node) &&
         returnStyle !== 'explicit'
@@ -80,28 +74,28 @@ module.exports = {
       return sourceCode.getText(node.body);
     };
 
-    const getParamsSource = params =>
-      params.map(param => sourceCode.getText(param));
-    const getFunctionName = node =>
+    const getParamsSource = (params) =>
+      params.map((param) => sourceCode.getText(param));
+    const getFunctionName = (node) =>
       node && node.id && node.id.name ? node.id.name : '';
-    const isAsyncFunction = node => node.async === true;
-    const isGeneratorFunction = node => node.generator === true;
+    const isAsyncFunction = (node) => node.async === true;
+    const isGeneratorFunction = (node) => node.generator === true;
 
     const containsToken = (type, value, node) => {
       return sourceCode
         .getTokens(node)
-        .some(token => token.type === type && token.value === value);
+        .some((token) => token.type === type && token.value === value);
     };
 
-    const containsSuper = node => {
+    const containsSuper = (node) => {
       return containsToken('Keyword', 'super', node);
     };
 
-    const containsThis = node => {
+    const containsThis = (node) => {
       return containsToken('Keyword', 'this', node);
     };
 
-    const containsArguments = node => {
+    const containsArguments = (node) => {
       return containsToken('Identifier', 'arguments', node);
     };
 
@@ -118,14 +112,14 @@ module.exports = {
       });
     };
 
-    const containsNewDotTarget = node => {
+    const containsNewDotTarget = (node) => {
       return containsTokenSequence(
         [['Keyword', 'new'], ['Punctuator', '.'], ['Identifier', 'target']],
         node
       );
     };
 
-    const writeArrowFunction = node => {
+    const writeArrowFunction = (node) => {
       const { body, isAsync, params } = getFunctionDescriptor(node);
       return 'ASYNC(PARAMS) => BODY'
         .replace('ASYNC', isAsync ? 'async ' : '')
@@ -133,28 +127,28 @@ module.exports = {
         .replace('PARAMS', params.join(', '));
     };
 
-    const writeArrowConstant = node => {
+    const writeArrowConstant = (node) => {
       const { name } = getFunctionDescriptor(node);
       return 'const NAME = ARROW_FUNCTION'
         .replace('NAME', name)
         .replace('ARROW_FUNCTION', writeArrowFunction(node));
     };
 
-    const getFunctionDescriptor = node => {
+    const getFunctionDescriptor = (node) => {
       return {
         body: getBodySource(node),
-        name: getFunctionName(node),
         isAsync: isAsyncFunction(node),
         isGenerator: isGeneratorFunction(node),
+        name: getFunctionName(node),
         params: getParamsSource(node.params)
       };
     };
 
-    const isPrototypeAssignment = node => {
+    const isPrototypeAssignment = (node) => {
       return context
         .getAncestors()
         .reverse()
-        .some(ancestor => {
+        .some((ancestor) => {
           const isPropertyOfReplacementPrototypeObject =
             ancestor.type === 'AssignmentExpression' &&
             ancestor.left &&
@@ -173,21 +167,21 @@ module.exports = {
         });
     };
 
-    const isWithinClassBody = node => {
+    const isWithinClassBody = (node) => {
       return context
         .getAncestors()
         .reverse()
-        .some(ancestor => {
+        .some((ancestor) => {
           return ancestor.type === 'ClassBody';
         });
     };
 
-    const isNamedDefaultExport = node =>
+    const isNamedDefaultExport = (node) =>
       node.id &&
       node.id.name &&
       node.parent.type === 'ExportDefaultDeclaration';
 
-    const isSafeTransformation = node => {
+    const isSafeTransformation = (node) => {
       return (
         !isGeneratorFunction(node) &&
         !containsThis(node) &&
@@ -200,24 +194,26 @@ module.exports = {
       );
     };
 
-    const getMessage = node => {
+    const getMessage = (node) => {
       return singleReturnOnly && returnsImmediately(node)
         ? USE_ARROW_WHEN_SINGLE_RETURN
         : USE_ARROW_WHEN_FUNCTION;
     };
 
     return {
-      'ExportDefaultDeclaration > FunctionDeclaration': node => {
+      'ExportDefaultDeclaration > FunctionDeclaration': (node) => {
         if (isSafeTransformation(node)) {
           context.report({
+            fix: (fixer) =>
+              fixer.replaceText(node, writeArrowFunction(node) + ';'),
             message: getMessage(node),
-            node,
-            fix: fixer =>
-              fixer.replaceText(node, writeArrowFunction(node) + ';')
+            node
           });
         }
       },
-      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set)$/]': node => {
+      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set)$/]': (
+        node
+      ) => {
         const propName = node.key.name;
         const functionNode = node.value;
         if (
@@ -225,52 +221,58 @@ module.exports = {
           (!isWithinClassBody(functionNode) || classPropertiesAllowed)
         ) {
           context.report({
-            message: getMessage(functionNode),
-            node: functionNode,
-            fix: fixer =>
+            fix: (fixer) =>
               fixer.replaceText(
                 node,
                 isWithinClassBody(node)
                   ? `${propName} = ${writeArrowFunction(functionNode)};`
                   : `${propName}: ${writeArrowFunction(functionNode)}`
-              )
+              ),
+            message: getMessage(functionNode),
+            node: functionNode
           });
         }
       },
-      'ArrowFunctionExpression[body.type!="BlockStatement"]': node => {
+      'ArrowFunctionExpression[body.type!="BlockStatement"]': (node) => {
         if (returnStyle === 'explicit' && isSafeTransformation(node)) {
           context.report({
+            fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
             message: USE_EXPLICIT,
-            node,
-            fix: fixer => fixer.replaceText(node, writeArrowFunction(node))
+            node
           });
         }
       },
-      'ArrowFunctionExpression[body.body.length=1][body.body.0.type="ReturnStatement"]': node => {
+      'ArrowFunctionExpression[body.body.length=1][body.body.0.type="ReturnStatement"]': (
+        node
+      ) => {
         if (returnStyle === 'implicit' && isSafeTransformation(node)) {
           context.report({
+            fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
             message: USE_IMPLICIT,
-            node,
-            fix: fixer => fixer.replaceText(node, writeArrowFunction(node))
+            node
           });
         }
       },
-      'FunctionExpression[parent.type!=/^(ClassProperty|MethodDefinition|Property)$/]': node => {
+      'FunctionExpression[parent.type!=/^(ClassProperty|MethodDefinition|Property)$/]': (
+        node
+      ) => {
         if (isSafeTransformation(node)) {
           context.report({
+            fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
             message: getMessage(node),
-            node,
-            fix: fixer => fixer.replaceText(node, writeArrowFunction(node))
+            node
           });
         }
       },
-      'FunctionDeclaration[parent.type!="ExportDefaultDeclaration"]': node => {
+      'FunctionDeclaration[parent.type!="ExportDefaultDeclaration"]': (
+        node
+      ) => {
         if (isSafeTransformation(node)) {
           context.report({
+            fix: (fixer) =>
+              fixer.replaceText(node, writeArrowConstant(node) + ';'),
             message: getMessage(node),
-            node,
-            fix: fixer =>
-              fixer.replaceText(node, writeArrowConstant(node) + ';')
+            node
           });
         }
       }

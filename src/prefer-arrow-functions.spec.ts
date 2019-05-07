@@ -1,15 +1,15 @@
-const RuleTester = require('eslint').RuleTester;
+import { RuleTester } from 'eslint';
 
-const rule = require('./prefer-arrow-functions');
+import rule from './prefer-arrow-functions';
 
-const {
-  USE_ARROW_WHEN_SINGLE_RETURN,
+import {
   USE_ARROW_WHEN_FUNCTION,
+  USE_ARROW_WHEN_SINGLE_RETURN,
   USE_EXPLICIT,
   USE_IMPLICIT
-} = require('./config');
+} from './config';
 
-const valid = [
+const alwaysValid = [
   {
     code: 'var foo = (bar) => bar;'
   },
@@ -638,20 +638,20 @@ const ruleTester = new RuleTester({
   }
 });
 
-const withOptions = extraOptions => object => ({
+const withOptions = (extraOptions) => (object) => ({
   ...object,
   options: [{ ...(object.options ? object.options[0] : {}), ...extraOptions }]
 });
 
-const withErrors = errors => object => ({
+const withErrors = (errors) => (object) => ({
   ...object,
   errors
 });
 
 describe('when function is valid, or cannot be converted to an arrow function', () => {
-  it('considers the function valid', () => {
+  describe('it considers the function valid', () => {
     ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
-      valid: valid,
+      valid: alwaysValid,
       invalid: []
     });
   });
@@ -660,7 +660,7 @@ describe('when function is valid, or cannot be converted to an arrow function', 
 describe('when singleReturnOnly is true', () => {
   describe('when function should be an arrow function', () => {
     describe('when function does not contain only a return statement', () => {
-      it('considers the function valid', () => {
+      describe('it considers the function valid', () => {
         ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
           valid: [
             ...invalidAndHasBlockStatement,
@@ -672,7 +672,7 @@ describe('when singleReturnOnly is true', () => {
       });
     });
     describe('when function contains only a return statement', () => {
-      it('fixes the function', () => {
+      describe('it fixes the function', () => {
         ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
           valid: [],
           invalid: invalidAndHasSingleReturn
@@ -683,7 +683,7 @@ describe('when singleReturnOnly is true', () => {
     });
   });
   describe('when two functions are featured: one returns immediately and the other has a block statement', () => {
-    it('fixes the function which returns and considers the other valid', () => {
+    describe('it fixes the function which returns and considers the other valid', () => {
       ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
         valid: [],
         invalid: invalidAndHasSingleReturnWithMultipleMatches
@@ -696,7 +696,7 @@ describe('when singleReturnOnly is true', () => {
 
 describe('when singleReturnOnly is false', () => {
   describe('when function should be an arrow function', () => {
-    it('fixes the function', () => {
+    describe('it fixes the function', () => {
       ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
         valid: [],
         invalid: [
@@ -741,7 +741,7 @@ describe('when singleReturnOnly is false', () => {
       });
     });
     describe('when two functions are featured: one returns immediately and the other has a block statement', () => {
-      it('fixes both functions', () => {
+      describe('it fixes both functions', () => {
         ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
           valid: [],
           invalid: invalidAndHasSingleReturnWithMultipleMatches
@@ -756,7 +756,7 @@ describe('when singleReturnOnly is false', () => {
 describe('when disallowPrototype is true', () => {
   describe('when function should be an arrow function', () => {
     describe('when function is assigned to a prototype', () => {
-      it('considers the function invalid', () => {
+      describe('it considers the function invalid', () => {
         ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
           valid: [],
           invalid: invalidWhenDisallowPrototypeEnabled.map(
@@ -770,7 +770,7 @@ describe('when disallowPrototype is true', () => {
 
 describe('when returnStyle is "implicit"', () => {
   describe('when function is an arrow function with a block statement containing an immediate return', () => {
-    it('fixes the function to have an implicit return', () => {
+    describe('it fixes the function to have an implicit return', () => {
       ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
         valid: [],
         invalid: invalidWhenReturnStyleIsImplicit
@@ -783,7 +783,7 @@ describe('when returnStyle is "implicit"', () => {
 
 describe('when returnStyle is "explicit"', () => {
   describe('when function is an arrow function with an implicit return', () => {
-    it('fixes the function to have a block statement containing an immediate return', () => {
+    describe('it fixes the function to have a block statement containing an immediate return', () => {
       ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
         valid: [],
         invalid: invalidWhenReturnStyleIsExplicit
