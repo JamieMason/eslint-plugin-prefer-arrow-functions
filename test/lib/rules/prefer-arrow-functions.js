@@ -172,7 +172,7 @@ const validWhenSingleReturnOnly = [
   {
     code: 'class MyClass { async render(a, b) { return 3; } }'
   }
-].map(({ code }) => ({ code, options: [{ singleReturnOnly: true }] }));
+];
 
 const invalidWhenDisallowPrototypeEnabled = [
   {
@@ -180,11 +180,7 @@ const invalidWhenDisallowPrototypeEnabled = [
       'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};',
     errors: ['Prefer using arrow functions over plain functions']
   }
-].map(({ code, errors }) => ({
-  code,
-  errors,
-  options: [{ disallowPrototype: true }]
-}));
+];
 
 const invalidAndHasSingleReturn = [
   // ES6 classes & functions declared in object literals
@@ -245,6 +241,10 @@ const invalidAndHasSingleReturn = [
   },
 
   // function expressions
+  {
+    code: 'var foo = function(bar) { return bar(); }',
+    output: 'var foo = (bar) => bar()'
+  },
   {
     code: 'var foo = function() { return "World"; }',
     output: 'var foo = () => "World"'
@@ -517,22 +517,6 @@ const invalidAndHasBlockStatement = [
     output: 'const foo = async (a) => { console.log({a: false}); };'
   },
 
-  // treat inner functions properly
-  {
-    code:
-      '["Hello", "World"].forEach(function(a, b) { console.log(a + " " + b); })',
-    output:
-      '["Hello", "World"].forEach((a, b) => { console.log(a + " " + b); })'
-  },
-  {
-    code: 'var foo = function () { console.log(() => false); }',
-    output: 'var foo = () => { console.log(() => false); }'
-  },
-  {
-    code: 'var foo = async function () { console.log(async () => false) }',
-    output: 'var foo = async () => { console.log(async () => false) }'
-  },
-
   // don't obliterate whitespace and only remove newlines when appropriate
   {
     code: 'var foo = function() {\n  console.log("World");\n}',
@@ -567,18 +551,6 @@ const invalidAndHasBlockStatement = [
     output: 'const foo = async (a) => {\n  console.log(3);\n};'
   },
 
-  // don't mess up inner generator functions
-  {
-    code: 'function foo() { console.log(function * gen() { yield 1; }); }',
-    output: 'const foo = () => { console.log(function * gen() { yield 1; }); };'
-  },
-  {
-    code:
-      'async function foo() { console.log(function * gen() { yield 1; }); }',
-    output:
-      'const foo = async () => { console.log(function * gen() { yield 1; }); };'
-  },
-
   // don't mess with the semicolon in for statements
   {
     code:
@@ -606,6 +578,58 @@ const invalidAndHasBlockStatement = [
   }
 ];
 
+const invalidAndHasBlockStatementWithMultipleMatches = [
+  // treat inner functions properly
+  {
+    code:
+      '["Hello", "World"].forEach(function(a, b) { console.log(a + " " + b); })',
+    output:
+      '["Hello", "World"].forEach((a, b) => { console.log(a + " " + b); })'
+  },
+  {
+    code: 'var foo = function () { console.log(() => false); }',
+    output: 'var foo = () => { console.log(() => false); }'
+  },
+  {
+    code: 'var foo = async function () { console.log(async () => false) }',
+    output: 'var foo = async () => { console.log(async () => false) }'
+  },
+
+  // don't mess up inner generator functions
+  {
+    code: 'function foo() { console.log(function * gen() { yield 1; }); }',
+    output: 'const foo = () => { console.log(function * gen() { yield 1; }); };'
+  },
+  {
+    code:
+      'async function foo() { console.log(function * gen() { yield 1; }); }',
+    output:
+      'const foo = async () => { console.log(function * gen() { yield 1; }); };'
+  }
+];
+
+const invalidWhenReturnStyleIsImplicit = [
+  {
+    code: 'var foo = bar => { return bar(); }',
+    output: 'var foo = (bar) => bar()'
+  },
+  {
+    code: 'var foo = async bar => { return bar(); }',
+    output: 'var foo = async (bar) => bar()'
+  }
+];
+
+const invalidWhenReturnStyleIsExplicit = [
+  {
+    code: 'var foo = (bar) => bar()',
+    output: 'var foo = (bar) => { return bar() }'
+  },
+  {
+    code: 'var foo = async (bar) => bar()',
+    output: 'var foo = async (bar) => { return bar() }'
+  }
+];
+
 const ruleTester = new RuleTester({
   parserOptions: {
     ecmaFeatures: { jsx: false },
@@ -627,11 +651,19 @@ const withErrors = errors => object => ({
 ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
   valid: [
     ...valid,
-    ...validWhenSingleReturnOnly,
-    ...invalidAndHasBlockStatement.map(withOptions({ singleReturnOnly: true }))
+    ...validWhenSingleReturnOnly.map(withOptions({ singleReturnOnly: true })),
+    ...invalidAndHasBlockStatement.map(withOptions({ singleReturnOnly: true })),
+    ...invalidAndHasBlockStatementWithMultipleMatches.map(
+      withOptions({ singleReturnOnly: true })
+    )
   ],
   invalid: [
-    ...invalidWhenDisallowPrototypeEnabled,
+    ...invalidWhenDisallowPrototypeEnabled.map(
+      withOptions({ disallowPrototype: true })
+    ),
+
+    // only long form functions immediately returning a value should match when
+    // singleReturnOnly: true
     ...[...invalidAndHasSingleReturn]
       .map(withOptions({ singleReturnOnly: true }))
       .map(
@@ -639,9 +671,32 @@ ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
           'Prefer using arrow functions when the function contains only a return'
         ])
       ),
-    ...[...invalidAndHasSingleReturn, ...invalidAndHasBlockStatement]
+
+    // all use of long form functions should match when singleReturnOnly: false
+    ...[
+      ...invalidAndHasSingleReturn,
+      ...invalidAndHasBlockStatement,
+      ...invalidAndHasBlockStatementWithMultipleMatches
+    ]
       .map(withOptions({ singleReturnOnly: false }))
       .map(withErrors(['Prefer using arrow functions over plain functions'])),
+
+    // block statements should not be altered to return a result
+    ...invalidAndHasBlockStatement
+      .map(withOptions({ returnStyle: 'explicit', singleReturnOnly: false }))
+      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+    ...invalidAndHasBlockStatement
+      .map(withOptions({ returnStyle: 'implicit', singleReturnOnly: false }))
+      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+    ...invalidAndHasBlockStatement
+      .map(withOptions({ returnStyle: 'unchanged', singleReturnOnly: false }))
+      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+
+    // these examples contain 2 functions in a single statement, where one
+    // returns and the other has a block statement.
+    //
+    // with singleReturnOnly: true
+    // * only the function which returns should trigger the rule
     ...invalidAndHasSingleReturnWithMultipleMatches
       .map(withOptions({ singleReturnOnly: true }))
       .map(
@@ -649,12 +704,34 @@ ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
           'Prefer using arrow functions when the function contains only a return'
         ])
       ),
+    // with singleReturnOnly: false
+    // * both functions should trigger the rule
     ...invalidAndHasSingleReturnWithMultipleMatches
       .map(withOptions({ singleReturnOnly: false }))
       .map(
         withErrors([
           'Prefer using arrow functions over plain functions',
           'Prefer using arrow functions over plain functions'
+        ])
+      ),
+
+    // arrow functions with block statements containing an immediate return are
+    // converted to implicit returns when returnStyle: 'implicit'
+    ...invalidWhenReturnStyleIsImplicit
+      .map(withOptions({ returnStyle: 'implicit' }))
+      .map(
+        withErrors([
+          'Prefer using implicit returns when the arrow function contain only a return'
+        ])
+      ),
+
+    // arrow functions with implicit returns are converted to block statements
+    // containing an immediate return when returnStyle: 'explicit'
+    ...invalidWhenReturnStyleIsExplicit
+      .map(withOptions({ returnStyle: 'explicit' }))
+      .map(
+        withErrors([
+          'Prefer using explicit returns when the arrow function contain only a return'
         ])
       )
   ]
