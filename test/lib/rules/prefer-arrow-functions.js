@@ -1,13 +1,14 @@
-/**
- * @fileoverview Tests for prefer-arrow-functions rule.
- * @author Triston Jones
- */
-
-'use strict';
-
 const RuleTester = require('eslint').RuleTester;
 
 const rule = require('../../../lib/rules/prefer-arrow-functions');
+
+const {
+  DEFAULT_OPTIONS,
+  USE_ARROW_WHEN_SINGLE_RETURN,
+  USE_ARROW_WHEN_FUNCTION,
+  USE_EXPLICIT,
+  USE_IMPLICIT
+} = require('../../../lib/config');
 
 const valid = [
   {
@@ -178,7 +179,7 @@ const invalidWhenDisallowPrototypeEnabled = [
   {
     code:
       'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};',
-    errors: ['Prefer using arrow functions over plain functions']
+    errors: [USE_ARROW_WHEN_FUNCTION]
   }
 ];
 
@@ -666,11 +667,7 @@ ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
     // singleReturnOnly: true
     ...[...invalidAndHasSingleReturn]
       .map(withOptions({ singleReturnOnly: true }))
-      .map(
-        withErrors([
-          'Prefer using arrow functions when the function contains only a return'
-        ])
-      ),
+      .map(withErrors([USE_ARROW_WHEN_SINGLE_RETURN])),
 
     // all use of long form functions should match when singleReturnOnly: false
     ...[
@@ -679,18 +676,18 @@ ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
       ...invalidAndHasBlockStatementWithMultipleMatches
     ]
       .map(withOptions({ singleReturnOnly: false }))
-      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
 
     // block statements should not be altered to return a result
     ...invalidAndHasBlockStatement
       .map(withOptions({ returnStyle: 'explicit', singleReturnOnly: false }))
-      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
     ...invalidAndHasBlockStatement
       .map(withOptions({ returnStyle: 'implicit', singleReturnOnly: false }))
-      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
     ...invalidAndHasBlockStatement
       .map(withOptions({ returnStyle: 'unchanged', singleReturnOnly: false }))
-      .map(withErrors(['Prefer using arrow functions over plain functions'])),
+      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
 
     // these examples contain 2 functions in a single statement, where one
     // returns and the other has a block statement.
@@ -699,40 +696,23 @@ ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
     // * only the function which returns should trigger the rule
     ...invalidAndHasSingleReturnWithMultipleMatches
       .map(withOptions({ singleReturnOnly: true }))
-      .map(
-        withErrors([
-          'Prefer using arrow functions when the function contains only a return'
-        ])
-      ),
+      .map(withErrors([USE_ARROW_WHEN_SINGLE_RETURN])),
     // with singleReturnOnly: false
     // * both functions should trigger the rule
     ...invalidAndHasSingleReturnWithMultipleMatches
       .map(withOptions({ singleReturnOnly: false }))
-      .map(
-        withErrors([
-          'Prefer using arrow functions over plain functions',
-          'Prefer using arrow functions over plain functions'
-        ])
-      ),
+      .map(withErrors([USE_ARROW_WHEN_FUNCTION, USE_ARROW_WHEN_FUNCTION])),
 
     // arrow functions with block statements containing an immediate return are
     // converted to implicit returns when returnStyle: 'implicit'
     ...invalidWhenReturnStyleIsImplicit
       .map(withOptions({ returnStyle: 'implicit' }))
-      .map(
-        withErrors([
-          'Prefer using implicit returns when the arrow function contain only a return'
-        ])
-      ),
+      .map(withErrors([USE_IMPLICIT])),
 
     // arrow functions with implicit returns are converted to block statements
     // containing an immediate return when returnStyle: 'explicit'
     ...invalidWhenReturnStyleIsExplicit
       .map(withOptions({ returnStyle: 'explicit' }))
-      .map(
-        withErrors([
-          'Prefer using explicit returns when the arrow function contain only a return'
-        ])
-      )
+      .map(withErrors([USE_EXPLICIT]))
   ]
 });
