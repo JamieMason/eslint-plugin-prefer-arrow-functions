@@ -3,7 +3,6 @@ const RuleTester = require('eslint').RuleTester;
 const rule = require('../../../lib/rules/prefer-arrow-functions');
 
 const {
-  DEFAULT_OPTIONS,
   USE_ARROW_WHEN_SINGLE_RETURN,
   USE_ARROW_WHEN_FUNCTION,
   USE_EXPLICIT,
@@ -649,70 +648,148 @@ const withErrors = errors => object => ({
   errors
 });
 
-ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
-  valid: [
-    ...valid,
-    ...validWhenSingleReturnOnly.map(withOptions({ singleReturnOnly: true })),
-    ...invalidAndHasBlockStatement.map(withOptions({ singleReturnOnly: true })),
-    ...invalidAndHasBlockStatementWithMultipleMatches.map(
-      withOptions({ singleReturnOnly: true })
-    )
-  ],
-  invalid: [
-    ...invalidWhenDisallowPrototypeEnabled.map(
-      withOptions({ disallowPrototype: true })
-    ),
+describe('when function is valid, or cannot be converted to an arrow function', () => {
+  it('considers the function valid', () => {
+    ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+      valid: valid,
+      invalid: []
+    });
+  });
+});
 
-    // only long form functions immediately returning a value should match when
-    // singleReturnOnly: true
-    ...[...invalidAndHasSingleReturn]
-      .map(withOptions({ singleReturnOnly: true }))
-      .map(withErrors([USE_ARROW_WHEN_SINGLE_RETURN])),
+describe('when singleReturnOnly is true', () => {
+  describe('when function should be an arrow function', () => {
+    describe('when function does not contain only a return statement', () => {
+      it('considers the function valid', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [
+            ...invalidAndHasBlockStatement,
+            ...invalidAndHasBlockStatementWithMultipleMatches,
+            ...validWhenSingleReturnOnly
+          ].map(withOptions({ singleReturnOnly: true })),
+          invalid: []
+        });
+      });
+    });
+    describe('when function contains only a return statement', () => {
+      it('fixes the function', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [],
+          invalid: invalidAndHasSingleReturn
+            .map(withOptions({ singleReturnOnly: true }))
+            .map(withErrors([USE_ARROW_WHEN_SINGLE_RETURN]))
+        });
+      });
+    });
+  });
+  describe('when two functions are featured: one returns immediately and the other has a block statement', () => {
+    it('fixes the function which returns and considers the other valid', () => {
+      ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+        valid: [],
+        invalid: invalidAndHasSingleReturnWithMultipleMatches
+          .map(withOptions({ singleReturnOnly: true }))
+          .map(withErrors([USE_ARROW_WHEN_SINGLE_RETURN]))
+      });
+    });
+  });
+});
 
-    // all use of long form functions should match when singleReturnOnly: false
-    ...[
-      ...invalidAndHasSingleReturn,
-      ...invalidAndHasBlockStatement,
-      ...invalidAndHasBlockStatementWithMultipleMatches
-    ]
-      .map(withOptions({ singleReturnOnly: false }))
-      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
+describe('when singleReturnOnly is false', () => {
+  describe('when function should be an arrow function', () => {
+    it('fixes the function', () => {
+      ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+        valid: [],
+        invalid: [
+          ...invalidAndHasSingleReturn,
+          ...invalidAndHasBlockStatement,
+          ...invalidAndHasBlockStatementWithMultipleMatches
+        ]
+          .map(withOptions({ singleReturnOnly: false }))
+          .map(withErrors([USE_ARROW_WHEN_FUNCTION]))
+      });
+    });
+    describe('when function has a block statement', () => {
+      describe('when returnStyle is "explicit"', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [],
+          invalid: invalidAndHasBlockStatement
+            .map(
+              withOptions({ returnStyle: 'explicit', singleReturnOnly: false })
+            )
+            .map(withErrors([USE_ARROW_WHEN_FUNCTION]))
+        });
+      });
+      describe('when returnStyle is "implicit"', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [],
+          invalid: invalidAndHasBlockStatement
+            .map(
+              withOptions({ returnStyle: 'implicit', singleReturnOnly: false })
+            )
+            .map(withErrors([USE_ARROW_WHEN_FUNCTION]))
+        });
+      });
+      describe('when returnStyle is "unchanged" or not set', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [],
+          invalid: invalidAndHasBlockStatement
+            .map(
+              withOptions({ returnStyle: 'unchanged', singleReturnOnly: false })
+            )
+            .map(withErrors([USE_ARROW_WHEN_FUNCTION]))
+        });
+      });
+    });
+    describe('when two functions are featured: one returns immediately and the other has a block statement', () => {
+      it('fixes both functions', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [],
+          invalid: invalidAndHasSingleReturnWithMultipleMatches
+            .map(withOptions({ singleReturnOnly: false }))
+            .map(withErrors([USE_ARROW_WHEN_FUNCTION, USE_ARROW_WHEN_FUNCTION]))
+        });
+      });
+    });
+  });
+});
 
-    // block statements should not be altered to return a result
-    ...invalidAndHasBlockStatement
-      .map(withOptions({ returnStyle: 'explicit', singleReturnOnly: false }))
-      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
-    ...invalidAndHasBlockStatement
-      .map(withOptions({ returnStyle: 'implicit', singleReturnOnly: false }))
-      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
-    ...invalidAndHasBlockStatement
-      .map(withOptions({ returnStyle: 'unchanged', singleReturnOnly: false }))
-      .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
+describe('when disallowPrototype is true', () => {
+  describe('when function should be an arrow function', () => {
+    describe('when function is assigned to a prototype', () => {
+      it('considers the function invalid', () => {
+        ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+          valid: [],
+          invalid: invalidWhenDisallowPrototypeEnabled.map(
+            withOptions({ disallowPrototype: true })
+          )
+        });
+      });
+    });
+  });
+});
 
-    // these examples contain 2 functions in a single statement, where one
-    // returns and the other has a block statement.
-    //
-    // with singleReturnOnly: true
-    // * only the function which returns should trigger the rule
-    ...invalidAndHasSingleReturnWithMultipleMatches
-      .map(withOptions({ singleReturnOnly: true }))
-      .map(withErrors([USE_ARROW_WHEN_SINGLE_RETURN])),
-    // with singleReturnOnly: false
-    // * both functions should trigger the rule
-    ...invalidAndHasSingleReturnWithMultipleMatches
-      .map(withOptions({ singleReturnOnly: false }))
-      .map(withErrors([USE_ARROW_WHEN_FUNCTION, USE_ARROW_WHEN_FUNCTION])),
+describe('when returnStyle is "implicit"', () => {
+  describe('when function is an arrow function with a block statement containing an immediate return', () => {
+    it('fixes the function to have an implicit return', () => {
+      ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+        valid: [],
+        invalid: invalidWhenReturnStyleIsImplicit
+          .map(withOptions({ returnStyle: 'implicit' }))
+          .map(withErrors([USE_IMPLICIT]))
+      });
+    });
+  });
+});
 
-    // arrow functions with block statements containing an immediate return are
-    // converted to implicit returns when returnStyle: 'implicit'
-    ...invalidWhenReturnStyleIsImplicit
-      .map(withOptions({ returnStyle: 'implicit' }))
-      .map(withErrors([USE_IMPLICIT])),
-
-    // arrow functions with implicit returns are converted to block statements
-    // containing an immediate return when returnStyle: 'explicit'
-    ...invalidWhenReturnStyleIsExplicit
-      .map(withOptions({ returnStyle: 'explicit' }))
-      .map(withErrors([USE_EXPLICIT]))
-  ]
+describe('when returnStyle is "explicit"', () => {
+  describe('when function is an arrow function with an implicit return', () => {
+    it('fixes the function to have a block statement containing an immediate return', () => {
+      ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+        valid: [],
+        invalid: invalidWhenReturnStyleIsExplicit
+          .map(withOptions({ returnStyle: 'explicit' }))
+          .map(withErrors([USE_EXPLICIT]))
+      });
+    });
+  });
 });
