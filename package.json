@@ -1,17 +1,17 @@
 {
-  "name": "eslint-plugin-prefer-arrow",
-  "description": "Prefer arrow functions in most cases",
+  "name": "eslint-plugin-prefer-arrow-functions",
+  "description": "Convert functions to arrow functions",
   "version": "1.1.5",
-  "author": "Triston Jones <contact@tristonjones.com>",
-  "bugs": "https://github.com/TristonJ/eslint-plugin-prefer-arrow/issues",
+  "author": "Jamie Mason (https://github.com/JamieMason)",
+  "bugs": "https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/issues",
   "contributors": [
-    "Jamie Mason (https://github.com/JamieMason)"
+    "Triston Jones (https://github.com/TristonJ)"
   ],
   "devDependencies": {
     "eslint": "5.16.0",
     "mocha": "6.1.4"
   },
-  "homepage": "https://github.com/TristonJ/eslint-plugin-prefer-arrow",
+  "homepage": "https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions",
   "keywords": [
     "es6",
     "eslint",
@@ -22,7 +22,7 @@
   "peerDependencies": {
     "eslint": ">=5.0.0"
   },
-  "repository": "TristonJ/eslint-plugin-prefer-arrow.git",
+  "repository": "JamieMason/eslint-plugin-prefer-arrow-functions.git",
   "scripts": {
     "test": "mocha test/lib/rules"
   }
