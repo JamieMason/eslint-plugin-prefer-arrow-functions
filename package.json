@@ -3,10 +3,15 @@
   "description": "Prefer arrow functions in most cases",
   "version": "1.1.5",
   "author": "Triston Jones <contact@tristonjones.com>",
+  "bugs": "https://github.com/TristonJ/eslint-plugin-prefer-arrow/issues",
+  "contributors": [
+    "Jamie Mason (https://github.com/JamieMason)"
+  ],
   "devDependencies": {
     "eslint": "5.16.0",
     "mocha": "6.1.4"
   },
+  "homepage": "https://github.com/TristonJ/eslint-plugin-prefer-arrow",
   "keywords": [
     "es6",
     "eslint",
