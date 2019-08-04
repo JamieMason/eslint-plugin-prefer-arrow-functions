@@ -1,4 +1,11 @@
-# 3.0.0 (2019-05-07)
+## [3.0.1](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/compare/3.0.0...3.0.1) (2019-08-04)
+
+### Bug Fixes
+
+- **npm:** update dependencies
+  ([274db0d](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/commit/274db0d))
+
+# [3.0.0](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/compare/45b597b...3.0.0) (2019-05-07)
 
 ### Features
 
