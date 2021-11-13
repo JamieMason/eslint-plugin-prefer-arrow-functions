@@ -152,6 +152,9 @@ const validWhenSingleReturnOnly = [
     code: 'class MyClass { async foo(bar) {bar(); return bar()} }',
   },
   {
+    code: 'class MyClass {constructor(foo){this.foo = foo;}}; MyClass.prototype.func = function() {this.foo = "bar";};'
+  },
+  {
     code: 'var MyClass = { foo(bar) {bar(); return bar()} }',
   },
   {
@@ -171,9 +174,16 @@ const validWhenSingleReturnOnly = [
   },
 ];
 
+const validWhenDisallowPrototypeEnabled = [
+  {
+    code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = (): void => {};',
+  },
+];
+
 const invalidWhenDisallowPrototypeEnabled = [
   {
-    code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function() {};',
+    code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function(): void {};',
+    output: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = (): void => {};',
     errors: [USE_ARROW_WHEN_FUNCTION],
   },
 ];
@@ -804,9 +814,11 @@ describe('when singleReturnOnly is false', () => {
 describe('when disallowPrototype is true', () => {
   describe('when function should be an arrow function', () => {
     describe('when function is assigned to a prototype', () => {
-      describe('it considers the function invalid', () => {
+      describe('it fixes the function', () => {
         ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
-          valid: [],
+          valid: validWhenDisallowPrototypeEnabled.map(
+            withOptions({ disallowPrototype: true }),
+          ),
           invalid: invalidWhenDisallowPrototypeEnabled.map(
             withOptions({ disallowPrototype: true }),
           ),
