@@ -1,3 +1,12 @@
+## [3.1.4](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/compare/3.1.3...3.1.4) (2021-11-13)
+
+
+### Bug Fixes
+
+* **yarn:** regenerate lockfile ([b0afea1](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/commit/b0afea135a4de55e9c0e3525fc98caa88d81292e))
+
+
+
 ## [3.1.3](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/compare/3.0.1...3.1.3) (2021-11-13)
 
 
