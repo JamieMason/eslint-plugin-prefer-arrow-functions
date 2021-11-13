@@ -190,6 +190,11 @@ const invalidAndHasSingleReturn = [
     options: [{ classPropertiesAllowed: true }]
   },
   {
+    code: 'class MyClass { render(a: number, b: number): number { return 3; } }',
+    output: 'class MyClass { render = (a: number, b: number): number => 3; }',
+    options: [{ classPropertiesAllowed: true }]
+  },
+  {
     code: 'var MyClass = { render(a, b) { return 3; }, b: false }',
     output: 'var MyClass = { render: (a, b) => 3, b: false }'
   },
@@ -631,6 +636,7 @@ const invalidWhenReturnStyleIsExplicit = [
 ];
 
 const ruleTester = new RuleTester({
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: { jsx: false },
     ecmaVersion: 8,

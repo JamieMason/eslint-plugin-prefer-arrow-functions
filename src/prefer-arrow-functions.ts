@@ -81,6 +81,11 @@ export default {
     const isAsyncFunction = (node) => node.async === true;
     const isGeneratorFunction = (node) => node.generator === true;
 
+    const getReturnType = (node) =>
+      node.returnType &&
+      node.returnType.range &&
+      sourceCode.getText().substring(...node.returnType.range)
+
     const containsToken = (type, value, node) => {
       return sourceCode
         .getTokens(node)
@@ -120,10 +125,11 @@ export default {
     };
 
     const writeArrowFunction = (node) => {
-      const { body, isAsync, params } = getFunctionDescriptor(node);
-      return 'ASYNC(PARAMS) => BODY'
+      const { body, isAsync, params, returnType } = getFunctionDescriptor(node);
+      return 'ASYNC(PARAMS)RETURN_TYPE => BODY'
         .replace('ASYNC', isAsync ? 'async ' : '')
         .replace('BODY', body)
+        .replace('RETURN_TYPE', returnType ? returnType : '')
         .replace('PARAMS', params.join(', '));
     };
 
@@ -140,7 +146,8 @@ export default {
         isAsync: isAsyncFunction(node),
         isGenerator: isGeneratorFunction(node),
         name: getFunctionName(node),
-        params: getParamsSource(node.params)
+        params: getParamsSource(node.params),
+        returnType: getReturnType(node)
       };
     };
 
