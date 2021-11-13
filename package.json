@@ -40,9 +40,6 @@
     "eslint": ">=5.0.0"
   },
   "repository": "JamieMason/eslint-plugin-prefer-arrow-functions",
-  "resolutions": {
-    "lodash": ">=4.17.15"
-  },
   "scripts": {
     "build": "tsc --project .",
     "format": "prettier --write './src/**/*.ts'",
