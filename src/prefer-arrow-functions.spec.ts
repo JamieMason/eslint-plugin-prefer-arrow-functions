@@ -190,6 +190,12 @@ const invalidAndHasSingleReturn = [
     options: [{ classPropertiesAllowed: true }]
   },
   {
+    code:
+      'class MyClass { render(a: number, b: number): number { return 3; } }',
+    output: 'class MyClass { render = (a: number, b: number): number => 3; }',
+    options: [{ classPropertiesAllowed: true }]
+  },
+  {
     code: 'var MyClass = { render(a, b) { return 3; }, b: false }',
     output: 'var MyClass = { render: (a, b) => 3, b: false }'
   },
@@ -198,6 +204,10 @@ const invalidAndHasSingleReturn = [
   {
     code: 'function foo() { return 3; }',
     output: 'const foo = () => 3;'
+  },
+  {
+    code: 'function foo(): number { return 3; }',
+    output: 'const foo = (): number => 3;'
   },
   {
     code: 'async function foo() { return 3; }',
@@ -224,6 +234,10 @@ const invalidAndHasSingleReturn = [
   {
     code: 'export default function() { return 3; }',
     output: 'export default () => 3;'
+  },
+  {
+    code: 'export default function(): number { return 3; }',
+    output: 'export default (): number => 3;'
   },
   {
     code: 'export default async function() { return 3; }',
@@ -452,6 +466,12 @@ const invalidAndHasBlockStatement = [
     output: 'const foo = (a) => { console.log(a && (3 + a()) ? true : 99); };'
   },
   {
+    code:
+      'function foo(a): boolean | number { console.log(a && (3 + a()) ? true : 99); }',
+    output:
+      'const foo = (a): boolean | number => { console.log(a && (3 + a()) ? true : 99); };'
+  },
+  {
     code: 'async function foo(a) { console.log(a && (3 + a()) ? true : 99); }',
     output:
       'const foo = async (a) => { console.log(a && (3 + a()) ? true : 99); };'
@@ -461,6 +481,10 @@ const invalidAndHasBlockStatement = [
   {
     code: 'var foo = function() { console.log("World"); }',
     output: 'var foo = () => { console.log("World"); }'
+  },
+  {
+    code: 'var foo = function(): void { console.log("World"); }',
+    output: 'var foo = (): void => { console.log("World"); }'
   },
   {
     code: 'var foo = async function() { console.log("World"); }',
@@ -487,6 +511,10 @@ const invalidAndHasBlockStatement = [
   {
     code: 'var foo = function() { console.log({a: false}); }',
     output: 'var foo = () => { console.log({a: false}); }'
+  },
+  {
+    code: 'var foo = function(): void { console.log({a: false}); }',
+    output: 'var foo = (): void => { console.log({a: false}); }'
   },
   {
     code: 'var foo = async function() { console.log({a: false}); }',
@@ -521,6 +549,10 @@ const invalidAndHasBlockStatement = [
   {
     code: 'var foo = function() {\n  console.log("World");\n}',
     output: 'var foo = () => {\n  console.log("World");\n}'
+  },
+  {
+    code: 'var foo = function(): void {\n  console.log("World");\n}',
+    output: 'var foo = (): void => {\n  console.log("World");\n}'
   },
   {
     code: 'var foo = async function() {\n  console.log("World");\n}',
@@ -560,6 +592,12 @@ const invalidAndHasBlockStatement = [
   },
   {
     code:
+      'function withLoop(): void { console.log(() => { for (i = 0; i < 5; i++) {}}) }',
+    output:
+      'const withLoop = (): void => { console.log(() => { for (i = 0; i < 5; i++) {}}) };'
+  },
+  {
+    code:
       'async function withLoop() { console.log(async () => { for (i = 0; i < 5; i++) {}}) }',
     output:
       'const withLoop = async () => { console.log(async () => { for (i = 0; i < 5; i++) {}}) };'
@@ -587,6 +625,12 @@ const invalidAndHasBlockStatementWithMultipleMatches = [
       '["Hello", "World"].forEach((a, b) => { console.log(a + " " + b); })'
   },
   {
+    code:
+      '["Hello", "World"].forEach(function(a: number, b: number): void { console.log(a + " " + b); })',
+    output:
+      '["Hello", "World"].forEach((a: number, b: number): void => { console.log(a + " " + b); })'
+  },
+  {
     code: 'var foo = function () { console.log(() => false); }',
     output: 'var foo = () => { console.log(() => false); }'
   },
@@ -599,6 +643,10 @@ const invalidAndHasBlockStatementWithMultipleMatches = [
   {
     code: 'function foo() { console.log(function * gen() { yield 1; }); }',
     output: 'const foo = () => { console.log(function * gen() { yield 1; }); };'
+  },
+  {
+    code: 'function foo() { console.log(function * gen(): number { yield 1; }); }',
+    output: 'const foo = () => { console.log(function * gen(): number { yield 1; }); };'
   },
   {
     code:
@@ -614,6 +662,12 @@ const invalidWhenReturnStyleIsImplicit = [
     output: 'var foo = (bar) => bar()'
   },
   {
+    code:
+      'var foo: (fn: () => number) => number = (bar: () => number): number => { return bar() }',
+    output:
+      'var foo: (fn: () => number) => number = (bar: () => number): number => bar()'
+  },
+  {
     code: 'var foo = async bar => { return bar(); }',
     output: 'var foo = async (bar) => bar()'
   }
@@ -625,12 +679,19 @@ const invalidWhenReturnStyleIsExplicit = [
     output: 'var foo = (bar) => { return bar() }'
   },
   {
+    code:
+      'var foo: (fn: () => number) => number = (bar: () => number): number => bar()',
+    output:
+      'var foo: (fn: () => number) => number = (bar: () => number): number => { return bar() }'
+  },
+  {
     code: 'var foo = async (bar) => bar()',
     output: 'var foo = async (bar) => { return bar() }'
   }
 ];
 
 const ruleTester = new RuleTester({
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaFeatures: { jsx: false },
     ecmaVersion: 8,
