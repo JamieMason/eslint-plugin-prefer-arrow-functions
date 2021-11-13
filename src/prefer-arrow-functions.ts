@@ -76,8 +76,12 @@ export default {
 
     const getParamsSource = (params) =>
       params.map((param) => sourceCode.getText(param));
+
     const getFunctionName = (node) =>
       node && node.id && node.id.name ? node.id.name : '';
+
+    const isGenericFunction = (node) => Boolean(node.typeParameters);
+    const getGenericSource = (node) => sourceCode.getText(node.typeParameters);
     const isAsyncFunction = (node) => node.async === true;
     const isGeneratorFunction = (node) => node.generator === true;
 
@@ -129,9 +133,11 @@ export default {
     };
 
     const writeArrowFunction = (node) => {
-      const { body, isAsync, params, returnType } = getFunctionDescriptor(node);
-      return 'ASYNC(PARAMS)RETURN_TYPE => BODY'
+      const { body, isAsync, isGeneric, generic, params, returnType } =
+        getFunctionDescriptor(node);
+      return 'ASYNC<GENERIC>(PARAMS)RETURN_TYPE => BODY'
         .replace('ASYNC', isAsync ? 'async ' : '')
+        .replace('<GENERIC>', isGeneric ? generic : '')
         .replace('BODY', body)
         .replace('RETURN_TYPE', returnType ? returnType : '')
         .replace('PARAMS', params.join(', '));
@@ -149,7 +155,9 @@ export default {
         body: getBodySource(node),
         isAsync: isAsyncFunction(node),
         isGenerator: isGeneratorFunction(node),
+        isGeneric: isGenericFunction(node),
         name: getFunctionName(node),
+        generic: getGenericSource(node),
         params: getParamsSource(node.params),
         returnType: getReturnType(node),
       };

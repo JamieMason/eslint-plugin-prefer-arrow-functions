@@ -235,6 +235,14 @@ const invalidAndHasSingleReturn = [
     code: 'async function foo(a) { return 3; }',
     output: 'const foo = async (a) => 3;',
   },
+  {
+    code: 'function identity<T>(t: T): T { return t; }',
+    output: 'const identity = <T>(t: T): T => t;',
+  },
+  {
+    code: 'function identity<T>(t: T) { return t; }',
+    output: 'const identity = <T>(t: T) => t;',
+  },
 
   // Eslint treats export default as a special form of function declaration
   {
