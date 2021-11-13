@@ -152,7 +152,7 @@ const validWhenSingleReturnOnly = [
     code: 'class MyClass { async foo(bar) {bar(); return bar()} }',
   },
   {
-    code: 'class MyClass {constructor(foo){this.foo = foo;}}; MyClass.prototype.func = function() {this.foo = "bar";};'
+    code: 'class MyClass {constructor(foo){this.foo = foo;}}; MyClass.prototype.func = function() {this.foo = "bar";};',
   },
   {
     code: 'var MyClass = { foo(bar) {bar(); return bar()} }',
@@ -183,7 +183,8 @@ const validWhenDisallowPrototypeEnabled = [
 const invalidWhenDisallowPrototypeEnabled = [
   {
     code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = function(): void {};',
-    output: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = (): void => {};',
+    output:
+      'class obj {constructor(foo){this.foo = foo;}}; obj.prototype.func = (): void => {};',
     errors: [USE_ARROW_WHEN_FUNCTION],
   },
 ];
