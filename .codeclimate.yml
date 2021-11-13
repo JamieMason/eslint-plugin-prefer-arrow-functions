@@ -1,8 +1,0 @@
-languages:
-  TypeScript: true
-exclude_paths:
-  - 'dist/*'
-plugins:
-  eslint:
-    enabled: true
-config: eslintrc.js
