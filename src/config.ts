@@ -2,7 +2,7 @@ export const DEFAULT_OPTIONS = {
   classPropertiesAllowed: false,
   disallowPrototype: false,
   returnStyle: 'unchanged',
-  singleReturnOnly: false
+  singleReturnOnly: false,
 };
 
 export const USE_ARROW_WHEN_FUNCTION =

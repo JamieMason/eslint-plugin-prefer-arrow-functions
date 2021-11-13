@@ -3,7 +3,7 @@ import {
   USE_ARROW_WHEN_FUNCTION,
   USE_ARROW_WHEN_SINGLE_RETURN,
   USE_EXPLICIT,
-  USE_IMPLICIT
+  USE_IMPLICIT,
 } from './config';
 
 export default {
@@ -11,7 +11,7 @@ export default {
     docs: {
       category: 'emcascript6',
       description: 'prefer arrow functions',
-      recommended: false
+      recommended: false,
     },
     fixable: 'code',
     schema: [
@@ -23,13 +23,13 @@ export default {
           returnStyle: {
             default: DEFAULT_OPTIONS.returnStyle,
             pattern: '^(explicit|implicit|unchanged)$',
-            type: 'string'
+            type: 'string',
           },
-          singleReturnOnly: { type: 'boolean' }
+          singleReturnOnly: { type: 'boolean' },
         },
-        type: 'object'
-      }
-    ]
+        type: 'object',
+      },
+    ],
   },
   create: (context) => {
     const options = context.options[0] || {};
@@ -84,7 +84,7 @@ export default {
     const getReturnType = (node) =>
       node.returnType &&
       node.returnType.range &&
-      sourceCode.getText().substring(...node.returnType.range)
+      sourceCode.getText().substring(...node.returnType.range);
 
     const containsToken = (type, value, node) => {
       return sourceCode
@@ -119,8 +119,12 @@ export default {
 
     const containsNewDotTarget = (node) => {
       return containsTokenSequence(
-        [['Keyword', 'new'], ['Punctuator', '.'], ['Identifier', 'target']],
-        node
+        [
+          ['Keyword', 'new'],
+          ['Punctuator', '.'],
+          ['Identifier', 'target'],
+        ],
+        node,
       );
     };
 
@@ -147,7 +151,7 @@ export default {
         isGenerator: isGeneratorFunction(node),
         name: getFunctionName(node),
         params: getParamsSource(node.params),
-        returnType: getReturnType(node)
+        returnType: getReturnType(node),
       };
     };
 
@@ -214,75 +218,72 @@ export default {
             fix: (fixer) =>
               fixer.replaceText(node, writeArrowFunction(node) + ';'),
             message: getMessage(node),
-            node
+            node,
           });
         }
       },
-      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set)$/]': (
-        node
-      ) => {
-        const propName = node.key.name;
-        const functionNode = node.value;
-        if (
-          isSafeTransformation(functionNode) &&
-          (!isWithinClassBody(functionNode) || classPropertiesAllowed)
-        ) {
-          context.report({
-            fix: (fixer) =>
-              fixer.replaceText(
-                node,
-                isWithinClassBody(node)
-                  ? `${propName} = ${writeArrowFunction(functionNode)};`
-                  : `${propName}: ${writeArrowFunction(functionNode)}`
-              ),
-            message: getMessage(functionNode),
-            node: functionNode
-          });
-        }
-      },
+      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set)$/]':
+        (node) => {
+          const propName = node.key.name;
+          const functionNode = node.value;
+          if (
+            isSafeTransformation(functionNode) &&
+            (!isWithinClassBody(functionNode) || classPropertiesAllowed)
+          ) {
+            context.report({
+              fix: (fixer) =>
+                fixer.replaceText(
+                  node,
+                  isWithinClassBody(node)
+                    ? `${propName} = ${writeArrowFunction(functionNode)};`
+                    : `${propName}: ${writeArrowFunction(functionNode)}`,
+                ),
+              message: getMessage(functionNode),
+              node: functionNode,
+            });
+          }
+        },
       'ArrowFunctionExpression[body.type!="BlockStatement"]': (node) => {
         if (returnStyle === 'explicit' && isSafeTransformation(node)) {
           context.report({
             fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
             message: USE_EXPLICIT,
-            node
+            node,
           });
         }
       },
-      'ArrowFunctionExpression[body.body.length=1][body.body.0.type="ReturnStatement"]': (
-        node
-      ) => {
-        if (returnStyle === 'implicit' && isSafeTransformation(node)) {
-          context.report({
-            fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
-            message: USE_IMPLICIT,
-            node
-          });
-        }
-      },
-      'FunctionExpression[parent.type!=/^(ClassProperty|MethodDefinition|Property)$/]': (
-        node
-      ) => {
-        if (isSafeTransformation(node)) {
-          context.report({
-            fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
-            message: getMessage(node),
-            node
-          });
-        }
-      },
+      'ArrowFunctionExpression[body.body.length=1][body.body.0.type="ReturnStatement"]':
+        (node) => {
+          if (returnStyle === 'implicit' && isSafeTransformation(node)) {
+            context.report({
+              fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
+              message: USE_IMPLICIT,
+              node,
+            });
+          }
+        },
+      'FunctionExpression[parent.type!=/^(ClassProperty|MethodDefinition|Property)$/]':
+        (node) => {
+          if (isSafeTransformation(node)) {
+            context.report({
+              fix: (fixer) => fixer.replaceText(node, writeArrowFunction(node)),
+              message: getMessage(node),
+              node,
+            });
+          }
+        },
       'FunctionDeclaration[parent.type!="ExportDefaultDeclaration"]': (
-        node
+        node,
       ) => {
         if (isSafeTransformation(node)) {
           context.report({
             fix: (fixer) =>
               fixer.replaceText(node, writeArrowConstant(node) + ';'),
             message: getMessage(node),
-            node
+            node,
           });
         }
-      }
+      },
     };
-  }
+  },
 };

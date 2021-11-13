@@ -3,9 +3,9 @@ import preferArrowFunctions from './prefer-arrow-functions';
 
 export = {
   rules: {
-    'prefer-arrow-functions': preferArrowFunctions
+    'prefer-arrow-functions': preferArrowFunctions,
   },
   rulesConfig: {
-    'prefer-arrow-functions': [2, DEFAULT_OPTIONS]
-  }
+    'prefer-arrow-functions': [2, DEFAULT_OPTIONS],
+  },
 };
