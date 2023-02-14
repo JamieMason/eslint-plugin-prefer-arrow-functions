@@ -691,6 +691,81 @@ const invalidWhenReturnStyleIsExplicit = [
   },
 ];
 
+const validWhenAllowNamedFunctions = [
+  { code: '() => { function foo() { return "bar"; } }' },
+  { code: '() => { function * fooGen() { return yield "bar"; } }' },
+  { code: '() => { async function foo() { return await "bar"; } }' },
+  { code: '() => { function foo() { return () => "bar"; } }' },
+  { code: 'class FooClass { foo() { return "bar" }}' },
+  {
+    code: 'export default () => { function foo() { return "bar"; } }',
+  },
+  {
+    // Make sure "allowNamedFunctions" works with typescript
+    code: '() => { function foo(a: string): string { return `bar ${a}`;} }',
+    parser: require.resolve('@typescript-eslint/parser'),
+  },
+];
+
+const invalidWhenAllowNamedFunctions = [
+  // Invalid tests for "allowNamedFunctions" option
+  {
+    code: '() => { var foo = function() { return "bar"; }; }',
+    output: '() => { var foo = () => "bar"; }',
+  },
+  {
+    code: '() => { var foo = async function() { return await "bar"; }; }',
+    output: '() => { var foo = async () => await "bar"; }',
+  },
+  {
+    code: '() => { var foo = function() { return () => "bar"; }; }',
+    output: '() => { var foo = () => () => "bar"; }',
+  },
+  {
+    code: '() => { var foo = function() { return "bar"; }; }',
+    output: '() => { var foo = () => "bar"; }',
+  },
+  {
+    code: 'module.exports = () => { var foo = function() { return "bar"; }; }',
+    output: 'module.exports = () => { var foo = () => "bar"; }',
+  },
+  {
+    code: 'module.exports.foo = () => { var bar = function() { return "baz"; }; }',
+    output: 'module.exports.foo = () => { var bar = () => "baz"; }',
+  },
+  {
+    code: '() => { exports.foo = function() { return "bar"; }; }',
+    output: '() => { exports.foo = () => "bar"; }',
+  },
+  {
+    code: 'exports = function() { return "bar"; };',
+    output: 'exports = () => "bar";',
+  },
+  {
+    code: 'export default () => { var foo = function() { return "bar"; }; }',
+    output: 'export default () => { var foo = () => "bar"; }',
+  },
+  {
+    // Using multiple lines to check that it only errors on the inner function
+    code: `function top() {
+      return function() { return "bar"; };
+    }`,
+    output: `function top() {
+      return () => "bar";
+    }`,
+  },
+  {
+    // Make sure "allowNamedFunctions" works with typescript
+    code: `function foo(a: string): () => string {
+      return function() { return \`bar \${a}\`; };
+    }`,
+    output: `function foo(a: string): () => string {
+      return () => \`bar \${a}\`;
+    }`,
+    parser: require.resolve('@typescript-eslint/parser'),
+  },
+];
+
 const ruleTester = new RuleTester({
   parser: require.resolve('@typescript-eslint/parser'),
   parserOptions: {
@@ -859,6 +934,17 @@ describe('when returnStyle is "explicit"', () => {
           .map(withOptions({ returnStyle: 'explicit' }))
           .map(withErrors([USE_EXPLICIT])),
       });
+    });
+  });
+});
+
+describe('when allowNamedFunctions is true', () => {
+  describe("it doesn't report named functions", () => {
+    ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+      valid: validWhenAllowNamedFunctions,
+      invalid: invalidWhenAllowNamedFunctions
+        .map(withOptions({ allowNamedFunctions: true }))
+        .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
     });
   });
 });
