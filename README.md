@@ -34,6 +34,7 @@ Add the plugin to the `plugins` section and the rule to the `rules` section in y
     "prefer-arrow-functions/prefer-arrow-functions": [
       "warn",
       {
+        "allowNamedFunctions": false,
         "classPropertiesAllowed": false,
         "disallowPrototype": false,
         "returnStyle": "unchanged",
@@ -45,6 +46,10 @@ Add the plugin to the `plugins` section and the rule to the `rules` section in y
 ```
 
 ## 🤔 Options
+
+### `allowNamedFunctions`
+
+If set to true, the rule won't report named functions such as `function foo() {}`. Anonymous function such as `const foo = function() {}` will still be reported.
 
 ### `classPropertiesAllowed`
 
