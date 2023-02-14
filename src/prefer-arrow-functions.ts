@@ -18,6 +18,7 @@ export default {
       {
         additionalProperties: false,
         properties: {
+          allowNamedFunctions: { type: 'boolean' },
           classPropertiesAllowed: { type: 'boolean' },
           disallowPrototype: { type: 'boolean' },
           returnStyle: {
@@ -37,6 +38,7 @@ export default {
       typeof options[name] !== 'undefined'
         ? options[name]
         : DEFAULT_OPTIONS[name];
+    const allowNamedFunctions = getOption('allowNamedFunctions');
     const singleReturnOnly = getOption('singleReturnOnly');
     const classPropertiesAllowed = getOption('classPropertiesAllowed');
     const disallowPrototype = getOption('disallowPrototype');
@@ -195,10 +197,10 @@ export default {
         });
     };
 
+    const isNamed = (node) => node.id && node.id.name;
+
     const isNamedDefaultExport = (node) =>
-      node.id &&
-      node.id.name &&
-      node.parent.type === 'ExportDefaultDeclaration';
+      isNamed(node) && node.parent.type === 'ExportDefaultDeclaration';
 
     const isSafeTransformation = (node) => {
       return (
@@ -207,6 +209,7 @@ export default {
         !containsSuper(node) &&
         !containsArguments(node) &&
         !containsNewDotTarget(node) &&
+        (!isNamed(node) || !allowNamedFunctions) &&
         (!isPrototypeAssignment(node) || disallowPrototype) &&
         (!singleReturnOnly ||
           (returnsImmediately(node) && !isNamedDefaultExport(node)))
