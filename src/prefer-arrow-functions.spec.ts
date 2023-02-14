@@ -941,7 +941,9 @@ describe('when returnStyle is "explicit"', () => {
 describe('when allowNamedFunctions is true', () => {
   describe("it doesn't report named functions", () => {
     ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
-      valid: validWhenAllowNamedFunctions,
+      valid: validWhenAllowNamedFunctions.map(
+        withOptions({ allowNamedFunctions: true }),
+      ),
       invalid: invalidWhenAllowNamedFunctions
         .map(withOptions({ allowNamedFunctions: true }))
         .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
