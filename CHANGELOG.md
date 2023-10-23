@@ -1,3 +1,12 @@
+## [3.2.4](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/compare/3.1.4...3.2.4) (2023-10-23)
+
+
+### Features
+
+* **config:** add support for allowNamedFunctions ([50fb3b6](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/commit/50fb3b68d9b2eaf48617404bec8f9ed1b4e6a511))
+
+
+
 ## [3.1.4](https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/compare/3.1.3...3.1.4) (2021-11-13)
 
 
