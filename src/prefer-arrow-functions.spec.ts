@@ -100,6 +100,10 @@ const alwaysValid = [
   {
     code: 'function Foo() {if (!new.target) throw "Foo() must be called with new";}',
   },
+  // assertion functions are unavailable in arrow functions
+  {
+    code: 'function foo(val: any): asserts val is string {}',
+  },
 ];
 
 const validWhenSingleReturnOnly = [

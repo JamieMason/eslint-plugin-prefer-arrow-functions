@@ -86,6 +86,10 @@ export default {
     const getGenericSource = (node) => sourceCode.getText(node.typeParameters);
     const isAsyncFunction = (node) => node.async === true;
     const isGeneratorFunction = (node) => node.generator === true;
+    const isAssertionFunction = (node) =>
+      node.returnType &&
+      node.returnType.typeAnnotation &&
+      node.returnType.typeAnnotation.asserts;
 
     const getReturnType = (node) =>
       node.returnType &&
@@ -205,6 +209,7 @@ export default {
     const isSafeTransformation = (node) => {
       return (
         !isGeneratorFunction(node) &&
+        !isAssertionFunction(node) &&
         !containsThis(node) &&
         !containsSuper(node) &&
         !containsArguments(node) &&
