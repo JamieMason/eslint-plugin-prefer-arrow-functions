@@ -100,6 +100,19 @@ const alwaysValid = [
   {
     code: 'function Foo() {if (!new.target) throw "Foo() must be called with new";}',
   },
+  // function overloading is unavailable in arrow functions
+  {
+    code: 'function foo(): any;',
+  },
+  {
+    code: 'function foo(): any; function foo() {}',
+  },
+  {
+    code: 'function foo(val: string): void; function foo(val: number): void; function foo(val: string | number): void {}',
+  },
+  {
+    code: 'const foo = () => { function bar(val: string): void; function bar(val: number): void; function bar(val: string | number): void {} }',
+  },
 ];
 
 const validWhenSingleReturnOnly = [

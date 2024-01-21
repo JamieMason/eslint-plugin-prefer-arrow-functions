@@ -82,10 +82,27 @@ export default {
     const getFunctionName = (node) =>
       node && node.id && node.id.name ? node.id.name : '';
 
+    const getPreviousNode = (node) => {
+      if (!Array.isArray(node.parent.body)) return null;
+
+      const currentNodeIndex = node.parent.body.indexOf(node);
+      if (currentNodeIndex === 0) return null;
+
+      return node.parent.body[currentNodeIndex - 1];
+    };
+
     const isGenericFunction = (node) => Boolean(node.typeParameters);
     const getGenericSource = (node) => sourceCode.getText(node.typeParameters);
     const isAsyncFunction = (node) => node.async === true;
     const isGeneratorFunction = (node) => node.generator === true;
+    const isOverloadedFunction = (node) => {
+      const previousNode = getPreviousNode(node);
+
+      if (!previousNode) return false;
+      if (previousNode.type === 'TSDeclareFunction') return true;
+
+      return false;
+    };
 
     const getReturnType = (node) =>
       node.returnType &&
@@ -205,6 +222,7 @@ export default {
     const isSafeTransformation = (node) => {
       return (
         !isGeneratorFunction(node) &&
+        !isOverloadedFunction(node) &&
         !containsThis(node) &&
         !containsSuper(node) &&
         !containsArguments(node) &&
