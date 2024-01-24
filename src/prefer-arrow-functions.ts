@@ -83,12 +83,16 @@ export default {
       node && node.id && node.id.name ? node.id.name : '';
 
     const getPreviousNode = (node) => {
+      if (isNamedExport(node)) {
+        node = node.parent;
+      }
+
       if (!Array.isArray(node.parent.body)) return null;
 
-      const currentNodeIndex = node.parent.body.indexOf(node);
-      if (currentNodeIndex === 0) return null;
+      const nodeIndex = node.parent.body.indexOf(node);
+      if (nodeIndex === 0) return null;
 
-      return node.parent.body[currentNodeIndex - 1];
+      return node.parent.body[nodeIndex - 1];
     };
 
     const isGenericFunction = (node) => Boolean(node.typeParameters);
@@ -100,6 +104,11 @@ export default {
 
       if (!previousNode) return false;
       if (previousNode.type === 'TSDeclareFunction') return true;
+      if (
+        previousNode.type === 'ExportNamedDeclaration' &&
+        previousNode.declaration.type === 'TSDeclareFunction'
+      )
+        return true;
 
       return false;
     };
@@ -218,6 +227,9 @@ export default {
 
     const isNamedDefaultExport = (node) =>
       isNamed(node) && node.parent.type === 'ExportDefaultDeclaration';
+
+    const isNamedExport = (node) =>
+      node.parent.type === 'ExportNamedDeclaration';
 
     const isSafeTransformation = (node) => {
       return (

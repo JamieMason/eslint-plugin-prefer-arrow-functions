@@ -113,6 +113,15 @@ const alwaysValid = [
   {
     code: 'const foo = () => { function bar(val: string): void; function bar(val: number): void; function bar(val: string | number): void {} }',
   },
+  {
+    code: 'export function foo(): any;',
+  },
+  {
+    code: 'export function foo(): any; export function foo() {}',
+  },
+  {
+    code: 'export function foo(val: string): void; export function foo(val: number): void; export function foo(val: string | number): void {}',
+  },
 ];
 
 const validWhenSingleReturnOnly = [
