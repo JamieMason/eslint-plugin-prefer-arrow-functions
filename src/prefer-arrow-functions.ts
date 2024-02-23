@@ -237,6 +237,7 @@ export default {
         (node) => {
           const propName = node.key.name;
           const functionNode = node.value;
+          const staticModifier = node.static ? 'static ' : '';
           if (
             isSafeTransformation(functionNode) &&
             (!isWithinClassBody(functionNode) || classPropertiesAllowed)
@@ -246,8 +247,8 @@ export default {
                 fixer.replaceText(
                   node,
                   isWithinClassBody(node)
-                    ? `${propName} = ${writeArrowFunction(functionNode)};`
-                    : `${propName}: ${writeArrowFunction(functionNode)}`,
+                    ? `${staticModifier}${propName} = ${writeArrowFunction(functionNode)};`
+                    : `${staticModifier}${propName}: ${writeArrowFunction(functionNode)}`,
                 ),
               message: getMessage(functionNode),
               node: functionNode,
