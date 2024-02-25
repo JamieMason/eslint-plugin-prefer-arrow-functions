@@ -501,6 +501,12 @@ const invalidAndHasBlockStatement = [
     output: 'const foo = async (a) => { console.log(3); };',
   },
 
+  // https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/issues/28
+  {
+    code: `export function foo() { const bar = '$'; return bar; }`,
+    output: `export const foo = () => { const bar = '$'; return bar; };`,
+  },
+
   // Eslint treats export default as a special form of function declaration
   {
     code: 'export default function() { console.log(3); }',
