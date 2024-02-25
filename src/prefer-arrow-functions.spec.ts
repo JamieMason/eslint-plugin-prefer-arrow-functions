@@ -466,7 +466,8 @@ const invalidAndHasBlockStatement = [
   },
   {
     code: 'class MyClass { static async render(a, b) { console.log(3); } }',
-    output: 'class MyClass { static render = async (a, b) => { console.log(3); }; }',
+    output:
+      'class MyClass { static render = async (a, b) => { console.log(3); }; }',
     options: [{ classPropertiesAllowed: true }],
   },
   {
