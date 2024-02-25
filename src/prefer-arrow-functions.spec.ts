@@ -1,13 +1,11 @@
 import { RuleTester } from 'eslint';
-
-import rule from './prefer-arrow-functions';
-
 import {
   USE_ARROW_WHEN_FUNCTION,
   USE_ARROW_WHEN_SINGLE_RETURN,
   USE_EXPLICIT,
   USE_IMPLICIT,
 } from './config';
+import rule from './prefer-arrow-functions';
 
 const alwaysValid = [
   {

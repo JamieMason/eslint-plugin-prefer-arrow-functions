@@ -282,8 +282,12 @@ export default {
                 fixer.replaceText(
                   node,
                   isWithinClassBody(node)
-                    ? `${staticModifier}${propName} = ${writeArrowFunction(functionNode)};`
-                    : `${staticModifier}${propName}: ${writeArrowFunction(functionNode)}`,
+                    ? `${staticModifier}${propName} = ${writeArrowFunction(
+                        functionNode,
+                      )};`
+                    : `${staticModifier}${propName}: ${writeArrowFunction(
+                        functionNode,
+                      )}`,
                 ),
               message: getMessage(functionNode),
               node: functionNode,
