@@ -179,6 +179,9 @@ const validWhenSingleReturnOnly = [
     code: 'class MyClass { static foo(bar) {bar(); return bar()} }',
   },
   {
+    code: 'class MyClass { static async foo(bar) {bar(); return bar()} }',
+  },
+  {
     code: 'class MyClass {constructor(foo){this.foo = foo;}}; MyClass.prototype.func = function() {this.foo = "bar";};',
   },
   {
@@ -459,6 +462,11 @@ const invalidAndHasBlockStatement = [
   {
     code: 'class MyClass { static render(a, b) { console.log(3); } }',
     output: 'class MyClass { static render = (a, b) => { console.log(3); }; }',
+    options: [{ classPropertiesAllowed: true }],
+  },
+  {
+    code: 'class MyClass { static async render(a, b) { console.log(3); } }',
+    output: 'class MyClass { static render = async (a, b) => { console.log(3); }; }',
     options: [{ classPropertiesAllowed: true }],
   },
   {
