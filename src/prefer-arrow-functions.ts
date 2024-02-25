@@ -165,21 +165,18 @@ export default {
     };
 
     const writeArrowFunction = (node) => {
-      const { body, isAsync, isGeneric, generic, params, returnType } =
-        getFunctionDescriptor(node);
-      return 'ASYNC<GENERIC>(PARAMS)RETURN_TYPE => BODY'
-        .replace('ASYNC', isAsync ? 'async ' : '')
-        .replace('<GENERIC>', isGeneric ? generic : '')
-        .replace('BODY', body)
-        .replace('RETURN_TYPE', returnType ? returnType : '')
-        .replace('PARAMS', params.join(', '));
+      const fn = getFunctionDescriptor(node);
+      const ASYNC = fn.isAsync ? 'async ' : '';
+      const GENERIC = fn.isGeneric ? fn.generic : '';
+      const BODY = fn.body;
+      const RETURN_TYPE = fn.returnType ? fn.returnType : '';
+      const PARAMS = fn.params.join(', ');
+      return `${ASYNC}${GENERIC}(${PARAMS})${RETURN_TYPE} => ${BODY}`;
     };
 
     const writeArrowConstant = (node) => {
-      const { name } = getFunctionDescriptor(node);
-      return 'const NAME = ARROW_FUNCTION'
-        .replace('NAME', name)
-        .replace('ARROW_FUNCTION', writeArrowFunction(node));
+      const fn = getFunctionDescriptor(node);
+      return `const ${fn.name} = ${writeArrowFunction(node)}`;
     };
 
     const getFunctionDescriptor = (node) => {
