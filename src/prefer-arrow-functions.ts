@@ -82,6 +82,19 @@ export default {
     const getFunctionName = (node) =>
       node && node.id && node.id.name ? node.id.name : '';
 
+    const getPreviousNode = (node) => {
+      if (isNamedExport(node)) {
+        node = node.parent;
+      }
+
+      if (!Array.isArray(node.parent.body)) return null;
+
+      const nodeIndex = node.parent.body.indexOf(node);
+      if (nodeIndex === 0) return null;
+
+      return node.parent.body[nodeIndex - 1];
+    };
+
     const isGenericFunction = (node) => Boolean(node.typeParameters);
     const getGenericSource = (node) => sourceCode.getText(node.typeParameters);
     const isAsyncFunction = (node) => node.async === true;
@@ -90,6 +103,19 @@ export default {
       node.returnType &&
       node.returnType.typeAnnotation &&
       node.returnType.typeAnnotation.asserts;
+    const isOverloadedFunction = (node) => {
+      const previousNode = getPreviousNode(node);
+
+      if (!previousNode) return false;
+      if (previousNode.type === 'TSDeclareFunction') return true;
+      if (
+        previousNode.type === 'ExportNamedDeclaration' &&
+        previousNode.declaration.type === 'TSDeclareFunction'
+      )
+        return true;
+
+      return false;
+    };
 
     const getReturnType = (node) =>
       node.returnType &&
@@ -206,10 +232,14 @@ export default {
     const isNamedDefaultExport = (node) =>
       isNamed(node) && node.parent.type === 'ExportDefaultDeclaration';
 
+    const isNamedExport = (node) =>
+      node.parent.type === 'ExportNamedDeclaration';
+
     const isSafeTransformation = (node) => {
       return (
         !isGeneratorFunction(node) &&
         !isAssertionFunction(node) &&
+        !isOverloadedFunction(node) &&
         !containsThis(node) &&
         !containsSuper(node) &&
         !containsArguments(node) &&

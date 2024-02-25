@@ -104,6 +104,28 @@ const alwaysValid = [
   {
     code: 'function foo(val: any): asserts val is string {}',
   },
+  // function overloading is unavailable in arrow functions
+  {
+    code: 'function foo(): any;',
+  },
+  {
+    code: 'function foo(): any; function foo() {}',
+  },
+  {
+    code: 'function foo(val: string): void; function foo(val: number): void; function foo(val: string | number): void {}',
+  },
+  {
+    code: 'const foo = () => { function bar(val: string): void; function bar(val: number): void; function bar(val: string | number): void {} }',
+  },
+  {
+    code: 'export function foo(): any;',
+  },
+  {
+    code: 'export function foo(): any; export function foo() {}',
+  },
+  {
+    code: 'export function foo(val: string): void; export function foo(val: number): void; export function foo(val: string | number): void {}',
+  },
 ];
 
 const validWhenSingleReturnOnly = [
