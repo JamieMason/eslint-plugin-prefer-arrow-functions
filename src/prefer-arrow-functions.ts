@@ -9,7 +9,7 @@ import {
 export default {
   meta: {
     docs: {
-      category: 'emcascript6',
+      category: 'ecmascript6',
       description: 'prefer arrow functions',
       recommended: false,
     },
@@ -110,7 +110,7 @@ export default {
       if (previousNode.type === 'TSDeclareFunction') return true;
       if (
         previousNode.type === 'ExportNamedDeclaration' &&
-        previousNode.declaration.type === 'TSDeclareFunction'
+        previousNode.declaration?.type === 'TSDeclareFunction'
       )
         return true;
 

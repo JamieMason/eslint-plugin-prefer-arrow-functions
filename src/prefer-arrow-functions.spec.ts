@@ -439,6 +439,13 @@ const invalidAndHasSingleReturn = [
     output:
       'var withLoop = async () => async () => { for (i = 0; i < 5; i++) {}}',
   },
+
+  // function overloading - don't mislabel as overload
+  //   export { x as y }; has node.declaration === null - regression test for this case
+  {
+    code: 'export { _foo as bar }; export async function baz() { return false; }',
+    output: 'export { _foo as bar }; export const baz = async () => false;',
+  },
 ];
 
 const invalidAndHasSingleReturnWithMultipleMatches = [
