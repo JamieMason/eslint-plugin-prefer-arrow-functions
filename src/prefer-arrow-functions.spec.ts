@@ -124,6 +124,10 @@ const alwaysValid = [
   {
     code: 'export function foo(val: string): void; export function foo(val: number): void; export function foo(val: string | number): void {}',
   },
+  // export { x }; has node.declaration === null - regression test for this case
+  {
+    code: 'export { foo }; export function bar(val: number): void; export function bar(val: string | number): void {}',
+  },
 ];
 
 const validWhenSingleReturnOnly = [
@@ -438,6 +442,13 @@ const invalidAndHasSingleReturn = [
     code: 'var withLoop = async function() { return async () => { for (i = 0; i < 5; i++) {}}}',
     output:
       'var withLoop = async () => async () => { for (i = 0; i < 5; i++) {}}',
+  },
+
+  // function overloading - don't mislabel as overload
+  //   export { x }; has node.declaration === null - regression test for this case
+  {
+    code: 'export { foo }; export async function bar() { return false; }',
+    output: 'export { foo }; export const bar = async () => false;',
   },
 ];
 
