@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-prefer-arrow-functions",
   "description": "Convert functions to arrow functions",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "author": "Jamie Mason (https://github.com/JamieMason)",
   "bugs": "https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/issues",
   "contributors": [
