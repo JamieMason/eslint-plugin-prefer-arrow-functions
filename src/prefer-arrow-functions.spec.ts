@@ -813,6 +813,18 @@ const invalidWhenAllowNamedFunctions = [
   },
 ];
 
+const validAndFileIsTSX = [
+  {
+    code: 'const Component = <T,>() => <div>test</div>;',
+  },
+  {
+    code: 'const Component = <T,>() => <div>test</div>;',
+  },
+  {
+    code: 'const Component = <T,U>() => <div>test</div>;',
+  },
+];
+
 const invalidAndFileIsTSX = [
   {
     code: 'function Component<T>() { return <div>test</div> }',
@@ -1026,7 +1038,7 @@ describe('when allowNamedFunctions is true', () => {
 describe('when file is TSX', () => {
   describe('it properly fixes generic type arguments', () => {
     ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
-      valid: [],
+      valid: validAndFileIsTSX.map(withTSX()),
       invalid: invalidAndFileIsTSX
         .map(withTSX())
         .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
