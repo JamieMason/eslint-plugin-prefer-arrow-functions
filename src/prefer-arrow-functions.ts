@@ -38,12 +38,17 @@ export default {
       typeof options[name] !== 'undefined'
         ? options[name]
         : DEFAULT_OPTIONS[name];
+
     const allowNamedFunctions = getOption('allowNamedFunctions');
     const singleReturnOnly = getOption('singleReturnOnly');
     const classPropertiesAllowed = getOption('classPropertiesAllowed');
     const disallowPrototype = getOption('disallowPrototype');
     const returnStyle = getOption('returnStyle');
+
     const sourceCode = context.getSourceCode();
+
+    const filename = context.getPhysicalFilename();
+    const isTSX = filename?.endsWith('.tsx');
 
     const isBlockStatementWithSingleReturn = (node) => {
       return (
@@ -97,7 +102,15 @@ export default {
     };
 
     const isGenericFunction = (node) => Boolean(node.typeParameters);
-    const getGenericSource = (node) => sourceCode.getText(node.typeParameters);
+    const getGenericSource = (node) => {
+      const genericSource = sourceCode.getText(node.typeParameters);
+      if (!isTSX) return genericSource;
+
+      const genericParameterCount = node.typeParameters?.params?.length || 0;
+      if (genericParameterCount === 1)
+        return `<${node.typeParameters.params[0].name.name},>`;
+      return genericSource;
+    };
     const isAsyncFunction = (node) => node.async === true;
     const isGeneratorFunction = (node) => node.generator === true;
     const isAssertionFunction = (node) =>
