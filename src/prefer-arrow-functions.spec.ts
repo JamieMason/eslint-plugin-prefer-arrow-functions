@@ -818,9 +818,6 @@ const validAndFileIsTSX = [
     code: 'const Component = <T,>() => <div>test</div>;',
   },
   {
-    code: 'const Component = <T,>() => <div>test</div>;',
-  },
-  {
     code: 'const Component = <T,U>() => <div>test</div>;',
   },
 ];
