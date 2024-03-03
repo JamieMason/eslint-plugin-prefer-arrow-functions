@@ -813,6 +813,21 @@ const invalidWhenAllowNamedFunctions = [
   },
 ];
 
+const invalidAndFileIsTSX = [
+  {
+    code: 'function Component<T>() { return <div>test</div> }',
+    output: 'const Component = <T,>() => <div>test</div>;',
+  },
+  {
+    code: 'function Component<T,>() { return <div>test</div> }',
+    output: 'const Component = <T,>() => <div>test</div>;',
+  },
+  {
+    code: 'function Component<T,U>() { return <div>test</div> }',
+    output: 'const Component = <T,U>() => <div>test</div>;',
+  },
+];
+
 const ruleTester = new RuleTester({
   parser: require.resolve('@typescript-eslint/parser'),
   parserOptions: {
@@ -830,6 +845,16 @@ const withOptions = (extraOptions) => (object) => ({
 const withErrors = (errors) => (object) => ({
   ...object,
   errors,
+});
+
+const withTSX = () => (object) => ({
+  ...object,
+  filename: '/some/path/Component.tsx',
+  parserOptions: {
+    ecmaFeatures: { jsx: true },
+    ecmaVersion: 8,
+    sourceType: 'module',
+  },
 });
 
 describe('when function is valid, or cannot be converted to an arrow function', () => {
@@ -993,6 +1018,17 @@ describe('when allowNamedFunctions is true', () => {
       ),
       invalid: invalidWhenAllowNamedFunctions
         .map(withOptions({ allowNamedFunctions: true }))
+        .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
+    });
+  });
+});
+
+describe('when file is TSX', () => {
+  describe('it properly fixes generic type arguments', () => {
+    ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: invalidAndFileIsTSX
+        .map(withTSX())
         .map(withErrors([USE_ARROW_WHEN_FUNCTION])),
     });
   });
