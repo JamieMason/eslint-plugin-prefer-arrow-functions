@@ -773,15 +773,10 @@ const invalidWhenAllowNamedFunctions = [
 const ruleTester = new RuleTester({
   // TODO: Remove this `languageOptions` once the tests are updated for flat config:
   languageOptions: {
-    ecmaVersion: 5,
+    ecmaVersion: 5, // Original value was 8 here
     parser: require('@typescript-eslint/parser'),
-    sourceType: "script"
+    sourceType: 'script' // Original value was 'module' here
   },
-//   parserOptions: {
-//     ecmaFeatures: { jsx: false },
-//     ecmaVersion: 8,
-//     sourceType: 'module',
-//   },
 });
 
 const withOptions = (extraOptions) => (object) => ({
