@@ -57,6 +57,9 @@ const alwaysValid = [
     code: 'class obj {constructor(foo){this.foo = foo;}}; obj.prototype = {func: function() {}};',
   },
   {
+    code: 'class obj {constructor(private readonly foo: number){}};',
+  },
+  {
     code: 'var foo = function() { return this.bar; };',
   },
   {
@@ -127,6 +130,12 @@ const alwaysValid = [
   // export { x }; has node.declaration === null - regression test for this case
   {
     code: 'export { foo }; export function bar(val: number): void; export function bar(val: string | number): void {}',
+  },
+];
+
+const validWhenClassPropertiesAllowed = [
+  {
+    code: 'class obj {constructor(private readonly foo: number){}};',
   },
 ];
 
@@ -850,7 +859,12 @@ const withErrors = (errors) => (object) => ({
 describe('when function is valid, or cannot be converted to an arrow function', () => {
   describe('it considers the function valid', () => {
     ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
-      valid: alwaysValid,
+      valid: [
+        ...alwaysValid,
+        ...validWhenClassPropertiesAllowed.map(
+          withOptions({ classPropertiesAllowed: true }),
+        ),
+      ],
       invalid: [],
     });
   });
