@@ -846,7 +846,9 @@ describe('when function is valid, or cannot be converted to an arrow function', 
     ruleTester.run('lib/rules/prefer-arrow-functions', rule, {
       valid: [
         ...alwaysValid,
-        ...validWhenClassPropertiesAllowed.map(withOptions({ classPropertiesAllowed: true }))
+        ...validWhenClassPropertiesAllowed.map(
+          withOptions({ classPropertiesAllowed: true }),
+        ),
       ],
       invalid: [],
     });
