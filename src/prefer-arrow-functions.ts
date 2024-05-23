@@ -265,7 +265,7 @@ export default {
           });
         }
       },
-      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set)$/]':
+      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set|constructor)$/]':
         (node) => {
           const propName = node.key.name;
           const functionNode = node.value;
