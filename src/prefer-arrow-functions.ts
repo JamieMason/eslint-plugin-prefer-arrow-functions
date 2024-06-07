@@ -49,7 +49,8 @@ export default {
       return (
         node.body.body &&
         node.body.body.length === 1 &&
-        node.body.body[0].type === 'ReturnStatement'
+        node.body.body[0].type === 'ReturnStatement' &&
+        node.body.body[0].argument !== null
       );
     };
 

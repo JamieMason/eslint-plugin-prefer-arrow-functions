@@ -511,6 +511,10 @@ const invalidAndHasBlockStatement = [
     code: 'async function foo(a) { console.log(3); }',
     output: 'const foo = async (a) => { console.log(3); };',
   },
+  {
+    code: 'function foo() { return; }',
+    output: 'const foo = () => { return; };',
+  },
 
   // https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/issues/28
   {
