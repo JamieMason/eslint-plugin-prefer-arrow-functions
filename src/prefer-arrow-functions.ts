@@ -44,8 +44,7 @@ export default {
     const classPropertiesAllowed = getOption('classPropertiesAllowed');
     const disallowPrototype = getOption('disallowPrototype');
     const returnStyle = getOption('returnStyle');
-
-    const sourceCode = context.getSourceCode();
+    const { sourceCode } = context;
 
     const filename = context.getPhysicalFilename();
     const isTSX = filename?.endsWith('.tsx');
@@ -207,8 +206,8 @@ export default {
     };
 
     const isPrototypeAssignment = (node) => {
-      return context
-        .getAncestors()
+      return sourceCode
+        .getAncestors(node)
         .reverse()
         .some((ancestor) => {
           const isPropertyOfReplacementPrototypeObject =
@@ -230,8 +229,8 @@ export default {
     };
 
     const isWithinClassBody = (node) => {
-      return context
-        .getAncestors()
+      return sourceCode
+        .getAncestors(node)
         .reverse()
         .some((ancestor) => {
           return ancestor.type === 'ClassBody';
@@ -348,4 +347,4 @@ export default {
       },
     };
   },
-};
+} as const;

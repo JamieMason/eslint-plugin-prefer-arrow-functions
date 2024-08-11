@@ -7,6 +7,9 @@ import {
 } from './config';
 import rule from './prefer-arrow-functions';
 
+// TODO: Remove this once Jest starts supporting modern JavaScript
+globalThis.structuredClone ??= (obj) => JSON.parse(JSON.stringify(obj));
+
 const alwaysValid = [
   {
     code: 'var foo = (bar) => bar;',
@@ -512,18 +515,6 @@ const invalidAndHasBlockStatement = [
     code: 'async function foo(a) { console.log(3); }',
     output: 'const foo = async (a) => { console.log(3); };',
   },
-  {
-    code: 'function foo(a) { console.log(3); }',
-    output: 'const foo = (a) => { console.log(3); };',
-  },
-  {
-    code: 'async function foo(a) { console.log(3); }',
-    output: 'const foo = async (a) => { console.log(3); };',
-  },
-  {
-    code: 'function foo() { return; }',
-    output: 'const foo = () => { return; };',
-  },
 
   // https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/issues/28
   {
@@ -601,22 +592,6 @@ const invalidAndHasBlockStatement = [
     output: 'var foo = async () => { console.log({a: false}); }',
   },
   {
-    code: 'var foo = function() { console.log({a: false}); }',
-    output: 'var foo = () => { console.log({a: false}); }',
-  },
-  {
-    code: 'var foo = async function() { console.log({a: false}); }',
-    output: 'var foo = async () => { console.log({a: false}); }',
-  },
-  {
-    code: 'function foo(a) { console.log({a: false}); }',
-    output: 'const foo = (a) => { console.log({a: false}); };',
-  },
-  {
-    code: 'async function foo(a) { console.log({a: false}); }',
-    output: 'const foo = async (a) => { console.log({a: false}); };',
-  },
-  {
     code: 'function foo(a) { console.log({a: false}); }',
     output: 'const foo = (a) => { console.log({a: false}); };',
   },
@@ -637,22 +612,6 @@ const invalidAndHasBlockStatement = [
   {
     code: 'var foo = async function() {\n  console.log("World");\n}',
     output: 'var foo = async () => {\n  console.log("World");\n}',
-  },
-  {
-    code: 'var foo = function() {\n  console.log("World");\n}',
-    output: 'var foo = () => {\n  console.log("World");\n}',
-  },
-  {
-    code: 'var foo = async function() {\n  console.log("World");\n}',
-    output: 'var foo = async () => {\n  console.log("World");\n}',
-  },
-  {
-    code: 'function foo(a) {\n  console.log(3);\n}',
-    output: 'const foo = (a) => {\n  console.log(3);\n};',
-  },
-  {
-    code: 'async function foo(a) {\n  console.log(3);\n}',
-    output: 'const foo = async (a) => {\n  console.log(3);\n};',
   },
   {
     code: 'function foo(a) {\n  console.log(3);\n}',
@@ -774,7 +733,6 @@ const validWhenAllowNamedFunctions = [
   {
     // Make sure "allowNamedFunctions" works with typescript
     code: '() => { function foo(a: string): string { return `bar ${a}`;} }',
-    parser: require.resolve('@typescript-eslint/parser'),
   },
 ];
 
@@ -791,10 +749,6 @@ const invalidWhenAllowNamedFunctions = [
   {
     code: '() => { var foo = function() { return () => "bar"; }; }',
     output: '() => { var foo = () => () => "bar"; }',
-  },
-  {
-    code: '() => { var foo = function() { return "bar"; }; }',
-    output: '() => { var foo = () => "bar"; }',
   },
   {
     code: 'module.exports = () => { var foo = function() { return "bar"; }; }',
@@ -833,7 +787,6 @@ const invalidWhenAllowNamedFunctions = [
     output: `function foo(a: string): () => string {
       return () => \`bar \${a}\`;
     }`,
-    parser: require.resolve('@typescript-eslint/parser'),
   },
 ];
 
@@ -862,11 +815,11 @@ const invalidAndFileIsTSX = [
 ];
 
 const ruleTester = new RuleTester({
-  parser: require.resolve('@typescript-eslint/parser'),
-  parserOptions: {
-    ecmaFeatures: { jsx: false },
-    ecmaVersion: 8,
-    sourceType: 'module',
+  // TODO: Remove this `languageOptions` once the tests are updated for flat config:
+  languageOptions: {
+    ecmaVersion: 5, // Original value was 8 here
+    parser: require('@typescript-eslint/parser'),
+    sourceType: 'script', // Original value was 'module' here
   },
 });
 
