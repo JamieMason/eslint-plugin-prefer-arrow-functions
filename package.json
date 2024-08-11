@@ -5,10 +5,12 @@
   "author": "Jamie Mason (https://github.com/JamieMason)",
   "bugs": "https://github.com/JamieMason/eslint-plugin-prefer-arrow-functions/issues",
   "contributors": [
+    "Anders Kaseorg (https://github.com/andersk)",
     "Gabriel Montes (https://github.com/gabmontes)",
     "Harel Moshe (https://github.com/harelmo)",
     "Keith Lea (https://github.com/keithkml)",
     "Lou Cyx (https://github.com/loucyx)",
+    "Marek Dědič (https://github.com/marekdedic)",
     "Michael Gallagher (https://github.com/mikeapr4)",
     "Mitchell Merry (https://github.com/mitchell-merry)",
     "Pablo Enrici (https://github.com/pablen)",
