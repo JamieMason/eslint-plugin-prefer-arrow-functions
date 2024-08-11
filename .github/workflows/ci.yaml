@@ -1,39 +1,40 @@
-name: verify
+name: Build, Lint, Test
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./
 
 on:
+  pull_request:
   push:
-    branches: [master]
-  pull_request_target:
+    branches: [main, dev]
+
+env:
+  FORCE_COLOR: 3
+  TERM: xterm-256color
 
 jobs:
   all:
+    name: Build, Lint, Test
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
-          cache: yarn
-          node-version: 16.x
-
-      - name: Install
-        run: yarn install --frozen-lockfile
-
-      - name: Build
-        run: yarn build
-        env:
-          FORCE_COLOR: 3
-          TERM: xterm-256color
-
-      - name: Lint
-        run: yarn lint
-        env:
-          FORCE_COLOR: 3
-          TERM: xterm-256color
-
-      - name: Test
-        run: yarn test
-        env:
-          FORCE_COLOR: 3
-          TERM: xterm-256color
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          cache: 'pnpm'
+      - uses: actions/cache@v4
+        id: cache-npm
+        with:
+          path: node_modules
+          key: src-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm install
+        if: steps.cache-npm.outputs.cache-hit != 'true'
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run test
