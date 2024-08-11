@@ -1,3 +1,5 @@
+import { describe, it } from 'vitest';
+import tsParser from '@typescript-eslint/parser';
 import { RuleTester } from 'eslint';
 import {
   USE_ARROW_WHEN_FUNCTION,
@@ -6,9 +8,6 @@ import {
   USE_IMPLICIT,
 } from './config';
 import rule from './prefer-arrow-functions';
-
-// TODO: Remove this once Jest starts supporting modern JavaScript
-globalThis.structuredClone ??= (obj) => JSON.parse(JSON.stringify(obj));
 
 const alwaysValid = [
   {
@@ -814,12 +813,14 @@ const invalidAndFileIsTSX = [
   },
 ];
 
+RuleTester.describe = describe;
+RuleTester.it = it;
+
 const ruleTester = new RuleTester({
-  // TODO: Remove this `languageOptions` once the tests are updated for flat config:
   languageOptions: {
-    ecmaVersion: 5, // Original value was 8 here
-    parser: require('@typescript-eslint/parser'),
-    sourceType: 'script', // Original value was 'module' here
+    ecmaVersion: 'latest',
+    parser: tsParser,
+    sourceType: 'script',
   },
 });
 
@@ -836,9 +837,9 @@ const withErrors = (errors) => (object) => ({
 const withTSX = () => (object) => ({
   ...object,
   filename: '/some/path/Component.tsx',
-  parserOptions: {
-    ecmaFeatures: { jsx: true },
-    ecmaVersion: 8,
+  languageOptions: {
+    // ecmaFeatures: { jsx: true },
+    ecmaVersion: 'latest',
     sourceType: 'module',
   },
 });
