@@ -482,6 +482,16 @@ const invalidAndHasBlockStatement = [
     options: [{ classPropertiesAllowed: true }],
   },
   {
+    code: 'class MyClass { #render(a, b) { console.log(3); } }',
+    output: 'class MyClass { #render = (a, b) => { console.log(3); }; }',
+    options: [{ classPropertiesAllowed: true }],
+  },
+  {
+    code: 'class MyClass { static #render(a, b) { console.log(3); } }',
+    output: 'class MyClass { static #render = (a, b) => { console.log(3); }; }',
+    options: [{ classPropertiesAllowed: true }],
+  },
+  {
     code: 'class MyClass { static render(a, b) { console.log(3); } }',
     output: 'class MyClass { static render = (a, b) => { console.log(3); }; }',
     options: [{ classPropertiesAllowed: true }],
