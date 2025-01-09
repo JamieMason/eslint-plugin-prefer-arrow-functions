@@ -163,6 +163,15 @@ export class Guard {
     return this.isNamedFunction(fn) && this.options.allowedNames.includes(fn.id.name);
   }
 
+  isObjectProperty(fn: AnyFunction): boolean {
+    return this.sourceCode
+      .getAncestors(fn)
+      .reverse()
+      .some((ancestor) => {
+        return ancestor.type === AST_NODE_TYPES.Property;
+      });
+  }
+
   isSafeTransformation(fn: TSESTree.Node): fn is AnyFunction {
     const isSafe =
       this.isAnyFunction(fn) &&
@@ -178,6 +187,7 @@ export class Guard {
     if (this.options.allowNamedFunctions && this.isNamedFunction(fn)) return false;
     if (!this.options.disallowPrototype && this.isPrototypeAssignment(fn)) return false;
     if (this.options.singleReturnOnly && !this.returnsImmediately(fn)) return false;
+    if (this.isObjectProperty(fn) && this.options.allowObjectProperties) return false;
     if (this.hasNameAndIsExportedAsDefaultExport(fn)) return false;
     return true;
   }

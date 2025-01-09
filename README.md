@@ -21,6 +21,7 @@ Add the plugin to the `plugins` section and the rule to the `rules` section in y
       {
         "allowedNames": [],
         "allowNamedFunctions": false,
+        "allowObjectProperties": false,
         "classPropertiesAllowed": false,
         "disallowPrototype": false,
         "returnStyle": "unchanged",
@@ -40,6 +41,16 @@ An optional array of function names to ignore. When set, the rule won't report n
 ### `allowNamedFunctions`
 
 If set to true, the rule won't report named functions such as `function foo() {}`. Anonymous function such as `const foo = function() {}` will still be reported.
+
+### `allowObjectProperties`
+
+If set to true, the rule won't report named methods such as
+
+```js
+const myObj = {
+  hello() {}
+}
+```
 
 ### `classPropertiesAllowed`
 

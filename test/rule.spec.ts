@@ -194,6 +194,35 @@ describe('when classPropertiesAllowed is true', () => {
   });
 });
 
+describe('allowObjectProperties', () => {
+  describe('when property can be converted to an arrow function', () => {
+    describe('leaves the method as is when allowObjectProperties is true', () => {
+      ruleTester.run('prefer-arrow-functions', rule, {
+        valid: [
+          {
+            code: 'const foo = { render(a, b) { console.log(3); } }',
+          },
+          {
+            code: 'export default { data(){ return 4 } }',
+          },
+        ].map(withOptions({ allowObjectProperties: true })),
+        invalid: [
+          {
+            code: 'const foo = { render(a, b) { return a + b; } }',
+            output: 'const foo = { render: (a, b) => a + b }',
+          },
+          {
+            code: 'export default { data(){ return 4 } }',
+            output: 'export default { data: () => 4 }',
+          },
+        ]
+          .map(withOptions({ allowObjectProperties: false }))
+          .map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+      });
+    });
+  });
+});
+
 describe('when singleReturnOnly is true', () => {
   describe('when function should be an arrow function', () => {
     describe('when function does not contain only a return statement', () => {

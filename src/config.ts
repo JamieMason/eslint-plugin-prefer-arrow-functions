@@ -19,6 +19,7 @@ export interface Scope {
 export interface ActualOptions {
   allowedNames: string[];
   allowNamedFunctions: boolean;
+  allowObjectProperties: boolean;
   classPropertiesAllowed: boolean;
   disallowPrototype: boolean;
   returnStyle: 'explicit' | 'implicit' | 'unchanged';
@@ -28,6 +29,7 @@ export interface ActualOptions {
 export const DEFAULT_OPTIONS: ActualOptions = {
   allowedNames: [],
   allowNamedFunctions: false,
+  allowObjectProperties: false,
   classPropertiesAllowed: false,
   disallowPrototype: false,
   returnStyle: 'unchanged',

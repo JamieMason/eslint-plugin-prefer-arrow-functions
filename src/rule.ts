@@ -30,6 +30,10 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
             default: DEFAULT_OPTIONS.allowNamedFunctions,
             type: 'boolean',
           },
+          allowObjectProperties: {
+            default: DEFAULT_OPTIONS.allowObjectProperties,
+            type: 'boolean',
+          },
           classPropertiesAllowed: {
             default: DEFAULT_OPTIONS.classPropertiesAllowed,
             type: 'boolean',
