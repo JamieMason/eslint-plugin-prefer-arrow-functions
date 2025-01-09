@@ -1,7 +1,8 @@
 import * as vitest from 'vitest';
 import { RuleTester } from '@typescript-eslint/rule-tester';
-import { Options, MessageId, preferArrowFunctions as rule, ActualOptions } from '../src/prefer-arrow-functions';
+import { preferArrowFunctions as rule } from '../src/rule';
 import * as scenarios from './scenarios';
+import { ActualOptions, MessageId, Options } from '../src/config';
 
 type Runner = typeof ruleTester.run<MessageId, Options>;
 type ValidTestCase = Exclude<Parameters<Runner>[2]['valid'][0], string>;

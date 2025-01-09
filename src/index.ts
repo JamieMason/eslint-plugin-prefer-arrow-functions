@@ -1,5 +1,5 @@
 import { TSESLint } from '@typescript-eslint/utils';
-import { preferArrowFunctions } from './prefer-arrow-functions';
+import { preferArrowFunctions } from './rule';
 
 const { name, version } =
   // `import`ing here would bypass the TSConfig's `"rootDir": "src"`

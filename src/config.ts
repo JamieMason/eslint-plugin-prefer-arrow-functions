@@ -1,4 +1,5 @@
 import { TSESTree } from '@typescript-eslint/types';
+import { RuleContext } from '@typescript-eslint/utils/ts-eslint';
 
 export type AnyFunctionBody = TSESTree.BlockStatement | TSESTree.Expression;
 export type AnyFunction = TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
@@ -8,6 +9,12 @@ export type GeneratorFunction = NameableFunction & { generator: true };
 export type WithTypeParameters<T extends AnyFunction> = T & { typeParameters: TSESTree.TSTypeParameterDeclaration };
 export type MessageId = keyof typeof MESSAGES_BY_ID;
 export type Options = [ActualOptions];
+
+export interface Scope {
+  isTsx: boolean;
+  options: ActualOptions;
+  sourceCode: RuleContext<MessageId, Options>['sourceCode'];
+}
 
 export interface ActualOptions {
   allowNamedFunctions: boolean;
