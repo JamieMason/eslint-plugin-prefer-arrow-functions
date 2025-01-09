@@ -159,6 +159,10 @@ export class Guard {
     return this.isNamedFunction(fn) && fn.parent.type === AST_NODE_TYPES.ExportDefaultDeclaration;
   }
 
+  isIgnored(fn: AnyFunction): boolean {
+    return this.isNamedFunction(fn) && this.options.allowedNames.includes(fn.id.name);
+  }
+
   isSafeTransformation(fn: TSESTree.Node): fn is AnyFunction {
     const isSafe =
       this.isAnyFunction(fn) &&
@@ -170,6 +174,7 @@ export class Guard {
       !this.containsArguments(fn) &&
       !this.containsNewDotTarget(fn);
     if (!isSafe) return false;
+    if (this.isIgnored(fn)) return false;
     if (this.options.allowNamedFunctions && this.isNamedFunction(fn)) return false;
     if (!this.options.disallowPrototype && this.isPrototypeAssignment(fn)) return false;
     if (this.options.singleReturnOnly && !this.returnsImmediately(fn)) return false;

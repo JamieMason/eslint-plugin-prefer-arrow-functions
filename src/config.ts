@@ -17,6 +17,7 @@ export interface Scope {
 }
 
 export interface ActualOptions {
+  allowedNames: string[];
   allowNamedFunctions: boolean;
   classPropertiesAllowed: boolean;
   disallowPrototype: boolean;
@@ -25,6 +26,7 @@ export interface ActualOptions {
 }
 
 export const DEFAULT_OPTIONS: ActualOptions = {
+  allowedNames: [],
   allowNamedFunctions: false,
   classPropertiesAllowed: false,
   disallowPrototype: false,

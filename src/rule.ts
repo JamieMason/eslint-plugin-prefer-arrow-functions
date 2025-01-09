@@ -19,6 +19,13 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       {
         additionalProperties: false,
         properties: {
+          allowedNames: {
+            default: DEFAULT_OPTIONS.allowedNames,
+            items: {
+              type: 'string',
+            },
+            type: 'array',
+          },
           allowNamedFunctions: {
             default: DEFAULT_OPTIONS.allowNamedFunctions,
             type: 'boolean',
