@@ -1,11 +1,17 @@
 {
   "compilerOptions": {
-    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "esModuleInterop": true,
     "module": "NodeNext",
-    "outDir": "./dist",
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "rootDir": "src",
     "skipLibCheck": true,
-    "strict": false
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2022"
   },
-  "include": ["./package.json", "./src/**/*.ts"],
-  "exclude": ["./src/**/*.spec.ts"]
+  "include": [
+    "src"
+  ],
 }

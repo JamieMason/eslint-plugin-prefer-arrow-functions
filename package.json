@@ -18,6 +18,16 @@
     "Renato Böhler (https://github.com/renato-bohler)",
     "Triston Jones (https://github.com/TristonJ)"
   ],
+  "dependencies": {
+    "@typescript-eslint/types": "8.19.1",
+    "@typescript-eslint/utils": "8.19.1"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",
     "@eslint/js": "9.17.0",
@@ -26,6 +36,7 @@
     "@types/node": "22.10.5",
     "@typescript-eslint/eslint-plugin": "8.19.1",
     "@typescript-eslint/parser": "8.19.1",
+    "@typescript-eslint/rule-tester": "8.19.1",
     "@vitest/coverage-v8": "2.1.8",
     "auto-changelog": "2.5.0",
     "eslint": "9.17.0",
@@ -51,18 +62,19 @@
   "license": "MIT",
   "main": "dist/index.js",
   "peerDependencies": {
-    "eslint": ">=8.0.0"
+    "eslint": "9.17.0"
   },
   "repository": "JamieMason/eslint-plugin-prefer-arrow-functions",
   "scripts": {
     "build": "tsc --project .",
-    "format": "prettier --write './src/**/*.ts'",
+    "format": "prettier --write src test",
     "lint": "eslint .",
     "prebuild": "rimraf ./dist",
     "prelint": "npm run format",
     "prepack": "npm run build",
     "release": "release-it",
-    "test": "vitest run src",
-    "test:watch": "vitest run --watch"
-  }
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "type": "commonjs"
 }
