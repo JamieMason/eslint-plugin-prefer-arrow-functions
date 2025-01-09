@@ -194,6 +194,17 @@ describe('when classPropertiesAllowed is true', () => {
   });
 });
 
+describe('issue #35', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      {
+        code: 'export default async function fetchFoo() { return await fetch("/foo"); }',
+      },
+    ],
+    invalid: [],
+  });
+});
+
 describe('allowObjectProperties', () => {
   describe('when property can be converted to an arrow function', () => {
     describe('leaves the method as is when allowObjectProperties is true', () => {
