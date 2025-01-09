@@ -205,6 +205,20 @@ describe('issue #35', () => {
   });
 });
 
+describe('issue #39', () => {
+  describe('plugin should fix function f while leaving g as-is', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: 'function f() { function g() { return this; } }',
+          output: 'const f = () => { function g() { return this } }',
+        },
+      ].map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+    });
+  });
+});
+
 describe('allowObjectProperties', () => {
   describe('when property can be converted to an arrow function', () => {
     describe('leaves the method as is when allowObjectProperties is true', () => {
