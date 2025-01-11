@@ -62,7 +62,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "peerDependencies": {
-    "eslint": "9.17.0"
+    "eslint": ">=9.17.0"
   },
   "repository": "JamieMason/eslint-plugin-prefer-arrow-functions",
   "scripts": {
