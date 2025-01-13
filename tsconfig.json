@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "esModuleInterop": true,
-    "module": "CommonJS",
+    "module": "NodeNext",
     "outDir": "dist",
     "resolveJsonModule": true,
     "rootDir": "src",
