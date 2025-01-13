@@ -1,5 +1,5 @@
 import { TSESTree } from '@typescript-eslint/types';
-import { RuleContext } from '@typescript-eslint/utils/ts-eslint';
+import { TSESLint } from '@typescript-eslint/utils';
 
 export type AnyFunctionBody = TSESTree.BlockStatement | TSESTree.Expression;
 export type AnyFunction = TSESTree.FunctionDeclaration | TSESTree.FunctionExpression | TSESTree.ArrowFunctionExpression;
@@ -13,7 +13,7 @@ export type Options = [ActualOptions];
 export interface Scope {
   isTsx: boolean;
   options: ActualOptions;
-  sourceCode: RuleContext<MessageId, Options>['sourceCode'];
+  sourceCode: TSESLint.RuleContext<MessageId, Options>['sourceCode'];
 }
 
 export interface ActualOptions {
