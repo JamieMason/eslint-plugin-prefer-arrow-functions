@@ -13,4 +13,4 @@ const plugin: TSESLint.FlatConfig.Plugin = {
   },
 };
 
-export default plugin;
+export const { meta, rules } = plugin;
