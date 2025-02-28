@@ -10,7 +10,80 @@ npm install --save-dev eslint eslint-plugin-prefer-arrow-functions
 
 ## Configuration
 
-Add the plugin to the `plugins` section and the rule to the `rules` section in your .eslintrc. The default values for options are listed in this example.
+### Flat
+
+For ESLint 9 and above.
+
+`eslint.config.mjs`:
+
+```js
+// Your file header
+
+import pluginJs from "@eslint/js";
+
+// Your imports
+
+import preferArrowFunctions from "eslint-plugin-prefer-arrow-functions";
+
+// Your imports
+
+
+export default [
+
+  // Presets of your plugins
+
+  // Or pluginJs.configs.recommended,
+  pluginJs.configs.all, {
+
+    // Your settings
+
+    plugins: {
+
+      // Your plugins
+
+      "prefer-arrow-functions": preferArrowFunctions,
+
+      // Your plugins
+
+    },
+
+    // Your settings
+
+    rules: {
+
+      // Your rules
+
+      "prefer-arrow-functions/prefer-arrow-functions": [
+
+        "warn",
+
+        {
+          "allowedNames": [],
+          "allowNamedFunctions": false,
+          "allowObjectProperties": false,
+          "classPropertiesAllowed": false,
+          "disallowPrototype": false,
+          "returnStyle": "unchanged",
+          "singleReturnOnly": false
+        }
+
+      ],
+
+      // Your rules
+
+    }
+
+  }
+
+];
+
+```
+
+### Legacy
+
+For ESLint 8 and below.
+
+Add the plugin to the `plugins` section and the rule to the `rules` section in your `.eslintrc`. The default values for options are listed in this example.
 
 ```json
 {
