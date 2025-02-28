@@ -1,6 +1,7 @@
 # eslint-plugin-prefer-arrow-functions
 
-> An ESLint Plugin to Lint and auto-fix plain Functions into Arrow Functions, in all cases where conversion would result in the same behaviour (Arrow Functions do not support `this`, `arguments`, or `new.target` for example).
+> An ESLint Plugin to Lint and auto-fix plain Functions into Arrow Functions, in all cases where conversion would result
+> in the same behaviour (Arrow Functions do not support `this`, `arguments`, or `new.target` for example).
 
 ## Installation
 
@@ -10,7 +11,46 @@ npm install --save-dev eslint eslint-plugin-prefer-arrow-functions
 
 ## Configuration
 
-Add the plugin to the `plugins` section and the rule to the `rules` section in your .eslintrc. The default values for options are listed in this example.
+### Flat
+
+For ESLint 9 and above.
+
+`eslint.config.mjs`:
+
+```js
+import pluginJs from '@eslint/js';
+import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions';
+
+export default [
+  pluginJs.configs.all,
+  {
+    plugins: {
+      'prefer-arrow-functions': preferArrowFunctions
+    },
+    rules: {
+      'prefer-arrow-functions/prefer-arrow-functions': [
+        'warn',
+        {
+          allowedNames: [],
+          allowNamedFunctions: false,
+          allowObjectProperties: false,
+          classPropertiesAllowed: false,
+          disallowPrototype: false,
+          returnStyle: 'unchanged',
+          singleReturnOnly: false,
+        },
+      ],
+    },
+  },
+];
+```
+
+### Legacy
+
+For ESLint 8 and below.
+
+Add the plugin to the `plugins` section and the rule to the `rules` section in your `.eslintrc`. The default values for
+options are listed in this example.
 
 ```json
 {
@@ -36,14 +76,17 @@ Add the plugin to the `plugins` section and the rule to the `rules` section in y
 
 ### `allowedNames`
 
-An optional array of function names to ignore. When set, the rule won't report named functions such as `function foo() {}` whose name is identical to a member of this array.
+An optional array of function names to ignore. When set, the rule won't report named functions such as
+`function foo() {}` whose name is identical to a member of this array.
 
 ### `allowNamedFunctions`
 
 Controls how named functions are handled:
 
-- When `true`, the rule won't report any named functions such as `function foo() {}`. Anonymous functions such as `const foo = function() {}` will still be reported.
-- When `"only-expressions"`, the rule will allow named function expressions (like `callback(function namedFn() {})`) but will still transform named function declarations (like `function foo() {}`).
+- When `true`, the rule won't report any named functions such as `function foo() {}`. Anonymous functions such as
+  `const foo = function() {}` will still be reported.
+- When `"only-expressions"`, the rule will allow named function expressions (like `callback(function namedFn() {})`) but
+  will still transform named function declarations (like `function foo() {}`).
 - When `false` (default), all functions will be transformed to arrow functions when safe to do so.
 
 ### `allowObjectProperties`
@@ -52,33 +95,39 @@ If set to true, the rule won't report named methods such as
 
 ```js
 const myObj = {
-  hello() {}
-}
+  hello() {},
+};
 ```
 
 ### `classPropertiesAllowed`
 
-When `true`, functions defined as [class instance fields](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Field_declarations) will be converted to arrow functions when doing so would not alter or break their behaviour.
+When `true`, functions defined as
+[class instance fields](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Field_declarations)
+will be converted to arrow functions when doing so would not alter or break their behaviour.
 
 ### `disallowPrototype`
 
-When `true`, functions assigned to a `prototype` will be converted to arrow functions when doing so would not alter or break their behaviour.
+When `true`, functions assigned to a `prototype` will be converted to arrow functions when doing so would not alter or
+break their behaviour.
 
 ### `returnStyle`
 
--   When `"implicit"`, arrow functions such as `x => { return x; }` will be converted to `x => x`.
--   When `"explicit"`, arrow functions such as `x => x` will be converted to `x => { return x; }`.
--   When `"unchanged"` or not set, arrow functions will be left as they were.
+- When `"implicit"`, arrow functions such as `x => { return x; }` will be converted to `x => x`.
+- When `"explicit"`, arrow functions such as `x => x` will be converted to `x => { return x; }`.
+- When `"unchanged"` or not set, arrow functions will be left as they were.
 
 ### `singleReturnOnly`
 
-When `true`, only `function` declarations which _only_ contain a return statement will be converted. Functions containing block statements will be ignored.
+When `true`, only `function` declarations which _only_ contain a return statement will be converted. Functions
+containing block statements will be ignored.
 
-> This option works well in conjunction with ESLint's built-in [arrow-body-style](http://eslint.org/docs/rules/arrow-body-style) set to `as-needed`.
+> This option works well in conjunction with ESLint's built-in
+> [arrow-body-style](http://eslint.org/docs/rules/arrow-body-style) set to `as-needed`.
 
 ## Credits
 
-This project is a fork of <https://github.com/TristonJ/eslint-plugin-prefer-arrow> by [Triston Jones](https://github.com/TristonJ).
+This project is a fork of <https://github.com/TristonJ/eslint-plugin-prefer-arrow> by
+[Triston Jones](https://github.com/TristonJ).
 
 ## Badges
 
