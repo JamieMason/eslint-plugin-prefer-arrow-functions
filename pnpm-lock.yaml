@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@typescript-eslint/types':
-        specifier: 8.19.1
+        specifier: ^8.19.1
         version: 8.19.1
       '@typescript-eslint/utils':
-        specifier: 8.19.1
+        specifier: ^8.19.1
         version: 8.19.1(eslint@9.17.0)(typescript@5.7.3)
     devDependencies:
       '@eslint/eslintrc':
@@ -2797,7 +2797,7 @@ snapshots:
     dependencies:
       '@typescript-eslint/typescript-estree': 8.19.1(typescript@5.7.3)
       '@typescript-eslint/utils': 8.19.1(eslint@9.17.0)(typescript@5.7.3)
-      debug: 4.3.6
+      debug: 4.4.0
       eslint: 9.17.0
       ts-api-utils: 2.0.0(typescript@5.7.3)
       typescript: 5.7.3
