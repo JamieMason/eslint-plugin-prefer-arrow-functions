@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@typescript-eslint/types':
-        specifier: 8.19.1
+        specifier: ^8.19.1
         version: 8.19.1
       '@typescript-eslint/utils':
-        specifier: 8.19.1
+        specifier: ^8.19.1
         version: 8.19.1(eslint@9.17.0)(typescript@5.7.3)
     devDependencies:
       '@eslint/eslintrc':
@@ -3501,7 +3501,7 @@ snapshots:
     dependencies:
       basic-ftp: 5.0.5
       data-uri-to-buffer: 6.0.2
-      debug: 4.3.6
+      debug: 4.4.0
       fs-extra: 11.2.0
     transitivePeerDependencies:
       - supports-color
@@ -3618,14 +3618,14 @@ snapshots:
   http-proxy-agent@7.0.2:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.3.6
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
   https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.3.6
+      debug: 4.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -4060,7 +4060,7 @@ snapshots:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.3
-      debug: 4.3.6
+      debug: 4.4.0
       get-uri: 6.0.3
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
@@ -4343,7 +4343,7 @@ snapshots:
   socks-proxy-agent@8.0.5:
     dependencies:
       agent-base: 7.1.3
-      debug: 4.3.6
+      debug: 4.4.0
       socks: 2.8.3
     transitivePeerDependencies:
       - supports-color
