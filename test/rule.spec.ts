@@ -513,3 +513,114 @@ describe('when file is TSX', () => {
     });
   });
 });
+
+describe('issue #60 - computed property keys should be preserved', () => {
+  describe('when computed property methods should NOT be transformed', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        {
+          code: `const obj = {
+  [Symbol.iterator]() {
+    return this;
+  },
+};`,
+        },
+        {
+          code: `const dynamicKey = 'method';
+const obj = {
+  [dynamicKey]() {
+    console.log(this.value);
+  },
+};`,
+        },
+        {
+          code: `const obj = {
+  ['computed-key']() {
+    return arguments[0];
+  },
+};`,
+        },
+        {
+          code: `const prefix = 'handle';
+const suffix = 'Click';
+const obj = {
+  [prefix + suffix]() {
+    super.onClick();
+  },
+};`,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('when computed property methods can be safely transformed', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: `const foo = 'bar';
+export default {
+  [foo]() {
+    console.log('output');
+  },
+};`,
+          output: `const foo = 'bar';
+export default {
+  [foo]: () => {
+    console.log('output');
+  },
+};`,
+        },
+        {
+          code: `const methodName = 'getData';
+const obj = {
+  [methodName]() {
+    return 42;
+  },
+};`,
+          output: `const methodName = 'getData';
+const obj = {
+  [methodName]: () => 42,
+};`,
+        },
+        {
+          code: `const obj = {
+  ['computed-key']() {
+    return 'value';
+  },
+};`,
+          output: `const obj = {
+  ['computed-key']: () => 'value',
+};`,
+        },
+        {
+          code: `const obj = {
+  [Symbol.iterator]() {
+    return 'iterator';
+  },
+};`,
+          output: `const obj = {
+  [Symbol.iterator]: () => 'iterator',
+};`,
+        },
+        {
+          code: `const prefix = 'handle';
+const suffix = 'Click';
+const obj = {
+  [prefix + suffix]() {
+    console.log('clicked');
+  },
+};`,
+          output: `const prefix = 'handle';
+const suffix = 'Click';
+const obj = {
+  [prefix + suffix]: () => {
+    console.log('clicked');
+  },
+};`,
+        },
+      ].map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+    });
+  });
+});

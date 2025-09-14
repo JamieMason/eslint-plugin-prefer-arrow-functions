@@ -85,12 +85,26 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           });
         }
       },
-      ':matches(ClassProperty, MethodDefinition, Property)[key.name][value.type="FunctionExpression"][kind!=/^(get|set|constructor)$/]':
+      ':matches(ClassProperty, MethodDefinition, Property)[value.type="FunctionExpression"][kind!=/^(get|set|constructor)$/]':
         (node: TSESTree.MethodDefinition | TSESTree.Property) => {
           const fn = node.value;
           if (guard.isSafeTransformation(fn) && (!guard.isWithinClassBody(fn) || options.classPropertiesAllowed)) {
-            const name = 'name' in node.key ? node.key.name : '';
-            const propName = node.key.type === AST_NODE_TYPES.PrivateIdentifier ? `#${name}` : name;
+            let propName: string;
+
+            if (node.key.type === AST_NODE_TYPES.PrivateIdentifier) {
+              const name = 'name' in node.key ? node.key.name : '';
+              propName = `#${name}`;
+            } else if (node.computed) {
+              // For computed properties like [foo], [Symbol.iterator], etc.
+              propName = `[${sourceCode.getText(node.key)}]`;
+            } else if ('name' in node.key) {
+              // For simple property names
+              propName = node.key.name;
+            } else {
+              // Fallback to source text for other cases
+              propName = sourceCode.getText(node.key);
+            }
+
             const staticModifier = 'static' in node && node.static ? 'static ' : '';
             ctx.report({
               fix: (fixer) =>
