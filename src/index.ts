@@ -6,11 +6,15 @@ const { name, version } =
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('../package.json') as typeof import('../package.json');
 
-const plugin: TSESLint.FlatConfig.Plugin = {
-  meta: { name, version },
-  rules: {
-    'prefer-arrow-functions': preferArrowFunctions,
-  },
+export const meta = { name, version };
+
+export const rules: Record<string, TSESLint.LooseRuleDefinition> = {
+  'prefer-arrow-functions': preferArrowFunctions,
 };
 
-export const { meta, rules } = plugin;
+const plugin: TSESLint.FlatConfig.Plugin = {
+  meta,
+  rules,
+};
+
+export default plugin;
