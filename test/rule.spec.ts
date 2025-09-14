@@ -624,3 +624,180 @@ const obj = {
     });
   });
 });
+
+describe('issue #37 - arrow function precedence in operator expressions', () => {
+  describe('when function expressions need parentheses due to operator precedence', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        // Cases that should be transformed but need parentheses for correct precedence
+        {
+          code: `const result = f || function() { return 'default'; };`,
+          output: `const result = f || (() => 'default');`,
+        },
+        {
+          code: `const result = f && function() { return 'value'; };`,
+          output: `const result = f && (() => 'value');`,
+        },
+        {
+          code: `const result = f + function() { return 1; };`,
+          output: `const result = f + (() => 1);`,
+        },
+        {
+          code: `const result = f - function() { return 1; };`,
+          output: `const result = f - (() => 1);`,
+        },
+        {
+          code: `const result = f * function() { return 2; };`,
+          output: `const result = f * (() => 2);`,
+        },
+        {
+          code: `const result = f / function() { return 2; };`,
+          output: `const result = f / (() => 2);`,
+        },
+        {
+          code: `const result = f % function() { return 3; };`,
+          output: `const result = f % (() => 3);`,
+        },
+        {
+          code: `const result = f ** function() { return 2; };`,
+          output: `const result = f ** (() => 2);`,
+        },
+        {
+          code: `const result = f | function() { return 1; };`,
+          output: `const result = f | (() => 1);`,
+        },
+        {
+          code: `const result = f & function() { return 1; };`,
+          output: `const result = f & (() => 1);`,
+        },
+        {
+          code: `const result = f ^ function() { return 1; };`,
+          output: `const result = f ^ (() => 1);`,
+        },
+        {
+          code: `const result = f << function() { return 1; };`,
+          output: `const result = f << (() => 1);`,
+        },
+        {
+          code: `const result = f >> function() { return 1; };`,
+          output: `const result = f >> (() => 1);`,
+        },
+        {
+          code: `const result = f >>> function() { return 1; };`,
+          output: `const result = f >>> (() => 1);`,
+        },
+        {
+          code: `const result = f < function() { return 1; };`,
+          output: `const result = f < (() => 1);`,
+        },
+        {
+          code: `const result = f > function() { return 1; };`,
+          output: `const result = f > (() => 1);`,
+        },
+        {
+          code: `const result = f <= function() { return 1; };`,
+          output: `const result = f <= (() => 1);`,
+        },
+        {
+          code: `const result = f >= function() { return 1; };`,
+          output: `const result = f >= (() => 1);`,
+        },
+        {
+          code: `const result = f == function() { return 1; };`,
+          output: `const result = f == (() => 1);`,
+        },
+        {
+          code: `const result = f != function() { return 1; };`,
+          output: `const result = f != (() => 1);`,
+        },
+        {
+          code: `const result = f === function() { return 1; };`,
+          output: `const result = f === (() => 1);`,
+        },
+        {
+          code: `const result = f !== function() { return 1; };`,
+          output: `const result = f !== (() => 1);`,
+        },
+        {
+          code: `const result = f instanceof function() { return Object; };`,
+          output: `const result = f instanceof (() => Object);`,
+        },
+        {
+          code: `const result = f in function() { return {}; };`,
+          output: `const result = f in (() => ({}));`,
+        },
+      ].map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+    });
+  });
+
+  describe('when function expressions can be safely transformed without parentheses', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        // Assignment operators - don't need parentheses
+        {
+          code: `let result = function() { return 'value'; };`,
+          output: `let result = () => 'value';`,
+        },
+        {
+          code: `result += function() { return 1; };`,
+          output: `result += () => 1;`,
+        },
+        {
+          code: `result -= function() { return 1; };`,
+          output: `result -= () => 1;`,
+        },
+        {
+          code: `result *= function() { return 2; };`,
+          output: `result *= () => 2;`,
+        },
+        {
+          code: `result /= function() { return 2; };`,
+          output: `result /= () => 2;`,
+        },
+        // Arrow function as right operand of arrow function
+        {
+          code: `const fn = () => function() { return 'nested'; };`,
+          output: `const fn = () => () => 'nested';`,
+        },
+        // Ternary operators - right side doesn't need parentheses
+        {
+          code: `const result = condition ? 'yes' : function() { return 'no'; };`,
+          output: `const result = condition ? 'yes' : () => 'no';`,
+        },
+        {
+          code: `const result = condition ? function() { return 'yes'; } : 'no';`,
+          output: `const result = condition ? () => 'yes' : 'no';`,
+        },
+        // Comma operator - doesn't need parentheses
+        {
+          code: `const result = (doSomething(), function() { return 'value'; });`,
+          output: `const result = (doSomething(), () => 'value');`,
+        },
+        {
+          code: `const result = (function() { return 'first'; }, doSomething());`,
+          output: `const result = (() => 'first', doSomething());`,
+        },
+        {
+          code: `const result = (doSomething(), function() { return 'second'; });`,
+          output: `const result = (doSomething(), () => 'second');`,
+        },
+        // Spread operator - doesn't need parentheses
+        {
+          code: `const result = [...items, function() { return 'last'; }];`,
+          output: `const result = [...items, () => 'last'];`,
+        },
+        // Yield - doesn't need parentheses
+        {
+          code: `function* gen() { yield function() { return 'value'; }; }`,
+          output: `function* gen() { yield () => 'value'; }`,
+        },
+        {
+          code: `function* gen() { yield* function() { return [1, 2, 3]; }; }`,
+          output: `function* gen() { yield* () => [1, 2, 3]; }`,
+        },
+      ].map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+    });
+  });
+});
