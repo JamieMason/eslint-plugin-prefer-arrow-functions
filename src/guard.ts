@@ -93,6 +93,63 @@ export class Guard {
     return this.containsToken('Keyword', 'this', node);
   }
 
+  containsThisDirectly(node: TSESTree.Node): boolean {
+    // Check if 'this' is used directly in the current function, excluding nested functions
+    const visit = (currentNode: TSESTree.Node | null | undefined, insideNestedFunction: boolean): boolean => {
+      if (!currentNode || typeof currentNode !== 'object' || !currentNode.type) {
+        return false;
+      }
+
+      // If we find a 'this' expression and we're not inside a nested function, return true
+      if (currentNode.type === AST_NODE_TYPES.ThisExpression && !insideNestedFunction) {
+        return true;
+      }
+
+      // Check if current node is a nested function
+      const isNestedFunction =
+        currentNode.type === AST_NODE_TYPES.FunctionDeclaration ||
+        currentNode.type === AST_NODE_TYPES.FunctionExpression ||
+        currentNode.type === AST_NODE_TYPES.ArrowFunctionExpression;
+
+      // If we encounter a nested function, mark that we're inside one for its children
+      const newInsideNestedFunction = insideNestedFunction || (isNestedFunction && currentNode !== node);
+
+      // Skip traversing function body if this is a nested function (not the root)
+      if (isNestedFunction && currentNode !== node) {
+        return false;
+      }
+
+      // Recursively check all child nodes
+      for (const key in currentNode) {
+        if (key === 'parent' || key === 'range' || key === 'loc') {
+          continue; // Skip these properties to avoid circular references
+        }
+
+        const child = currentNode[key as keyof TSESTree.Node];
+
+        if (child && typeof child === 'object') {
+          if (Array.isArray(child)) {
+            for (const item of child) {
+              if (item && typeof item === 'object' && 'type' in item) {
+                if (visit(item as TSESTree.Node, newInsideNestedFunction)) {
+                  return true;
+                }
+              }
+            }
+          } else if ('type' in child) {
+            if (visit(child as TSESTree.Node, newInsideNestedFunction)) {
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
+    };
+
+    return visit(node, false);
+  }
+
   containsArguments(node: TSESTree.Node): boolean {
     return this.containsToken('Identifier', 'arguments', node);
   }
@@ -178,7 +235,7 @@ export class Guard {
       !this.isGeneratorFunction(fn) &&
       !this.isAssertionFunction(fn) &&
       !this.isOverloadedFunction(fn) &&
-      !this.containsThis(fn) &&
+      !this.containsThisDirectly(fn) &&
       !this.containsSuper(fn) &&
       !this.containsArguments(fn) &&
       !this.containsNewDotTarget(fn);

@@ -76,14 +76,18 @@ export class Writer {
     if (!parent) return false;
 
     // If the function is the right operand of a binary expression or logical expression
-    if ((parent.type === AST_NODE_TYPES.BinaryExpression || parent.type === AST_NODE_TYPES.LogicalExpression) &&
-        parent.right === node) {
+    if (
+      (parent.type === AST_NODE_TYPES.BinaryExpression || parent.type === AST_NODE_TYPES.LogicalExpression) &&
+      parent.right === node
+    ) {
       return true;
     }
 
     // If the function is the left operand of most binary expressions (except assignment-like)
-    if ((parent.type === AST_NODE_TYPES.BinaryExpression || parent.type === AST_NODE_TYPES.LogicalExpression) &&
-        parent.left === node) {
+    if (
+      (parent.type === AST_NODE_TYPES.BinaryExpression || parent.type === AST_NODE_TYPES.LogicalExpression) &&
+      parent.left === node
+    ) {
       // Don't add parentheses for assignment-like operators
       if (parent.operator === 'in' || parent.operator === 'instanceof') {
         return true;
@@ -110,11 +114,13 @@ export class Writer {
     // - yield, yield*
     // - spread ...
     // - comma operator
-    if (parent.type === AST_NODE_TYPES.AssignmentExpression ||
-        parent.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-        parent.type === AST_NODE_TYPES.YieldExpression ||
-        parent.type === AST_NODE_TYPES.SpreadElement ||
-        parent.type === AST_NODE_TYPES.SequenceExpression) {
+    if (
+      parent.type === AST_NODE_TYPES.AssignmentExpression ||
+      parent.type === AST_NODE_TYPES.ArrowFunctionExpression ||
+      parent.type === AST_NODE_TYPES.YieldExpression ||
+      parent.type === AST_NODE_TYPES.SpreadElement ||
+      parent.type === AST_NODE_TYPES.SequenceExpression
+    ) {
       return false;
     }
 

@@ -801,3 +801,176 @@ describe('issue #37 - arrow function precedence in operator expressions', () => 
     });
   });
 });
+
+describe('issue #39 - outer functions should be transformed even if inner functions use this', () => {
+  describe('when outer functions should NOT be transformed (they themselves use this)', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        {
+          code: `function outer() {
+  console.log(this);
+  function inner() {
+    return this;
+  }
+  return inner;
+}`,
+        },
+        {
+          code: `function outer() {
+  const self = this;
+  function inner() {
+    return this;
+  }
+  return self;
+}`,
+        },
+        {
+          code: `const obj = {
+  method: function() {
+    console.log(this);
+    function helper() {
+      return this;
+    }
+    return helper();
+  }
+}`,
+        },
+      ],
+      invalid: [],
+    });
+  });
+
+  describe('when outer functions can be safely transformed (inner functions use this but outer does not)', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: `function outer() {
+  function inner() {
+    return this;
+  }
+  return inner;
+}`,
+          output: `const outer = () => {
+  function inner() {
+    return this;
+  }
+  return inner;
+};`,
+        },
+        {
+          code: `function outer() {
+  console.log('outer function');
+  function inner() {
+    return this;
+  }
+  return inner();
+}`,
+          output: `const outer = () => {
+  console.log('outer function');
+  function inner() {
+    return this;
+  }
+  return inner();
+};`,
+        },
+        {
+          code: `function outer(param) {
+  let result;
+  function inner() {
+    console.log(this);
+    return param;
+  }
+  result = inner();
+  return result;
+}`,
+          output: `const outer = (param) => {
+  let result;
+  function inner() {
+    console.log(this);
+    return param;
+  }
+  result = inner();
+  return result;
+};`,
+        },
+        {
+          code: `function outer() {
+  const helper = function() {
+    return this;
+  };
+  return helper;
+}`,
+          output: `const outer = () => {
+  const helper = function() {
+    return this;
+  };
+  return helper;
+};`,
+        },
+        {
+          code: `function outer() {
+  return function() {
+    return this;
+  };
+}`,
+          output: `const outer = () => function() {
+    return this;
+  };`,
+        },
+        {
+          code: `function outer() {
+  function innerA() {
+    return this;
+  }
+  function innerB() {
+    console.log(this);
+  }
+  return [innerA, innerB];
+}`,
+          output: `const outer = () => {
+  function innerA() {
+    return this;
+  }
+  function innerB() {
+    console.log(this);
+  }
+  return [innerA, innerB];
+};`,
+        },
+        {
+          code: `const obj = {
+  method: function() {
+    function helper() {
+      return this;
+    }
+    return helper();
+  }
+}`,
+          output: `const obj = {
+  method: () => {
+    function helper() {
+      return this;
+    }
+    return helper();
+  }
+}`,
+        },
+        {
+          code: `export default function() {
+  function inner() {
+    return this;
+  }
+  return inner;
+}`,
+          output: `export default () => {
+  function inner() {
+    return this;
+  }
+  return inner;
+};`,
+        },
+      ].map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+    });
+  });
+});
