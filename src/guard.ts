@@ -212,6 +212,14 @@ export class Guard {
     return fn.id !== null && fn.id.name !== null;
   }
 
+  isNamedFunctionExpression(fn: AnyFunction): fn is NamedFunction & TSESTree.FunctionExpression {
+    return fn.type === AST_NODE_TYPES.FunctionExpression && this.isNamedFunction(fn);
+  }
+
+  isNamedFunctionDeclaration(fn: AnyFunction): fn is NamedFunction & TSESTree.FunctionDeclaration {
+    return fn.type === AST_NODE_TYPES.FunctionDeclaration && this.isNamedFunction(fn);
+  }
+
   hasNameAndIsExportedAsDefaultExport(fn: AnyFunction): fn is NamedFunction {
     return this.isNamedFunction(fn) && fn.parent.type === AST_NODE_TYPES.ExportDefaultDeclaration;
   }
@@ -241,7 +249,8 @@ export class Guard {
       !this.containsNewDotTarget(fn);
     if (!isSafe) return false;
     if (this.isIgnored(fn)) return false;
-    if (this.options.allowNamedFunctions && this.isNamedFunction(fn)) return false;
+    if (this.options.allowNamedFunctions === true && this.isNamedFunction(fn)) return false;
+    if (this.options.allowNamedFunctions === 'only-expressions' && this.isNamedFunctionExpression(fn)) return false;
     if (!this.options.disallowPrototype && this.isPrototypeAssignment(fn)) return false;
     if (this.options.singleReturnOnly && !this.returnsImmediately(fn)) return false;
     if (this.isObjectProperty(fn) && this.options.allowObjectProperties) return false;

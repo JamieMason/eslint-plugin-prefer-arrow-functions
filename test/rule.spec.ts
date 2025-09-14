@@ -483,6 +483,167 @@ describe('when allowNamedFunctions is true', () => {
   });
 });
 
+describe('when allowNamedFunctions is "only-expressions"', () => {
+  describe('it allows named function expressions but transforms named declarations and anonymous expressions', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        // Named function expressions should be preserved
+        { code: 'useThisFunction(function doSomething() { return "bar"; })' },
+        { code: 'useThisFunction(function namedFunc() { console.log("test"); })' },
+        { code: 'callback(function myCallback() { return 42; })' },
+        { code: 'React.forwardRef(function MyComponent(props, ref) { return props.children; })' },
+        { code: 'addEventListener("click", function handleClick(event) { console.log(event); })' },
+        { code: 'arr.map(function mapFn(item) { return item * 2; })' },
+        { code: 'setTimeout(function delayedFn() { console.log("delayed"); }, 1000)' },
+
+        // Named function expressions with async should be preserved
+        { code: 'useAsyncFunction(async function asyncNamed() { return await getData(); })' },
+
+        // Named function expressions with generators should be preserved
+        { code: 'useGenerator(function* generatorNamed() { yield 1; })' },
+
+        // Named function expressions that preserve this behavior
+        { code: 'obj.method(function namedWithThis() { return this.value; })' },
+        { code: 'context.bind(function boundNamed() { this.prop = "value"; })' },
+
+        // Named function expressions with complex parameters
+        { code: 'processor(function processData(data, { options = {} } = {}) { return data.process(options); })' },
+
+        // Nested named function expressions
+        { code: 'outer(function outerNamed() { return inner(function innerNamed() { return "nested"; }); })' },
+
+        // Arrow functions should remain valid (no change from existing behavior)
+        { code: 'const arrow = () => "arrow"' },
+        { code: 'useArrowFunction(() => "test")' },
+      ].map(withOptions({ allowNamedFunctions: 'only-expressions' })),
+      invalid: [
+        // Named function declarations should be transformed
+        {
+          code: 'function doSomething() { return "bar"; }',
+          output: 'const doSomething = () => "bar";',
+        },
+        {
+          code: 'function namedDeclaration() { console.log("test"); }',
+          output: 'const namedDeclaration = () => { console.log("test"); };',
+        },
+        {
+          code: 'async function asyncDeclaration() { return await getData(); }',
+          output: 'const asyncDeclaration = async () => await getData();',
+        },
+
+        // Anonymous function expressions should be transformed
+        {
+          code: 'useThisFunction(function() { return "bar"; })',
+          output: 'useThisFunction(() => "bar")',
+        },
+        {
+          code: 'callback(function() { console.log("test"); })',
+          output: 'callback(() => { console.log("test"); })',
+        },
+        {
+          code: 'addEventListener("click", function(event) { console.log(event); })',
+          output: 'addEventListener("click", (event) => { console.log(event); })',
+        },
+        {
+          code: 'arr.map(function(item) { return item * 2; })',
+          output: 'arr.map((item) => item * 2)',
+        },
+        {
+          code: 'setTimeout(function() { console.log("delayed"); }, 1000)',
+          output: 'setTimeout(() => { console.log("delayed"); }, 1000)',
+        },
+
+        // Anonymous async function expressions should be transformed
+        {
+          code: 'useAsyncFunction(async function() { return await getData(); })',
+          output: 'useAsyncFunction(async () => await getData())',
+        },
+
+        // Variable assignments with anonymous functions should be transformed
+        {
+          code: 'var foo = function() { return "bar"; };',
+          output: 'var foo = () => "bar";',
+        },
+        {
+          code: 'const handler = function() { console.log("click"); };',
+          output: 'const handler = () => { console.log("click"); };',
+        },
+
+        // Object methods with anonymous functions should be transformed
+        {
+          code: 'var obj = { method: function() { return "test"; } }',
+          output: 'var obj = { method: () => "test" }',
+        },
+
+        // Nested cases: outer anonymous should transform, inner named expression should not
+        {
+          code: 'var outer = function() { return inner(function namedInner() { return "nested"; }); };',
+          output: 'var outer = () => inner(function namedInner() { return "nested"; });',
+        },
+
+        // Export default declarations should be transformed
+        {
+          code: 'export default function() { return "exported"; }',
+          output: 'export default () => "exported";',
+        },
+      ]
+        .map(withOptions({ allowNamedFunctions: 'only-expressions' }))
+        .map(withErrors(['USE_ARROW_WHEN_FUNCTION']))
+        .concat([
+          // Multiple function scenarios - both should be transformed (handled separately)
+          {
+            code: 'function declaration() { return "decl"; } var expr = function() { return "expr"; };',
+            output: 'const declaration = () => "decl"; var expr = () => "expr";',
+            options: [{ allowNamedFunctions: 'only-expressions' }],
+            errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }, { messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+          },
+        ]),
+    });
+  });
+
+  describe('it preserves this behavior with only-expressions option', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        // Named function expressions that use this should be preserved
+        { code: 'obj.addEventListener("click", function handleClick() { this.style.color = "red"; })' },
+        { code: 'elements.forEach(function processElement() { this.process(); })' },
+        { code: 'jQuery(selector).each(function namedEach() { $(this).addClass("active"); })' },
+
+        // Functions that don't use this but are named expressions should be preserved
+        { code: 'callback(function namedCallback() { return "no this used"; })' },
+
+        // Anonymous functions that use this should be preserved (existing behavior)
+        { code: 'obj.addEventListener("click", function() { this.style.color = "red"; })' },
+        { code: 'elements.forEach(function() { this.process(); })' },
+
+        // Arrow functions should remain valid (no change)
+        { code: 'obj.addEventListener("click", () => { console.log("arrow with no this"); })' },
+      ].map(withOptions({ allowNamedFunctions: 'only-expressions' })),
+      invalid: [
+        // Named function declarations that don't use this should still be transformed
+        {
+          code: 'function noThisUsed() { return "safe to transform"; }',
+          output: 'const noThisUsed = () => "safe to transform";',
+        },
+
+        // Anonymous function expressions that don't use this should be transformed
+        {
+          code: 'callback(function() { return "no this, should transform"; })',
+          output: 'callback(() => "no this, should transform")',
+        },
+
+        // Variable assignments with anonymous functions that don't use this
+        {
+          code: 'var handler = function() { console.log("no this"); };',
+          output: 'var handler = () => { console.log("no this"); };',
+        },
+      ]
+        .map(withOptions({ allowNamedFunctions: 'only-expressions' }))
+        .map(withErrors(['USE_ARROW_WHEN_FUNCTION'])),
+    });
+  });
+});
+
 describe('when file is TSX', () => {
   describe('it properly fixes generic type arguments', () => {
     ruleTester.run('prefer-arrow-functions', rule, {

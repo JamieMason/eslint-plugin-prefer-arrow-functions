@@ -18,7 +18,7 @@ export interface Scope {
 
 export interface ActualOptions {
   allowedNames: string[];
-  allowNamedFunctions: boolean;
+  allowNamedFunctions: boolean | 'only-expressions';
   allowObjectProperties: boolean;
   classPropertiesAllowed: boolean;
   disallowPrototype: boolean;

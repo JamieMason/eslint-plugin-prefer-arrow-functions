@@ -40,7 +40,11 @@ An optional array of function names to ignore. When set, the rule won't report n
 
 ### `allowNamedFunctions`
 
-If set to true, the rule won't report named functions such as `function foo() {}`. Anonymous function such as `const foo = function() {}` will still be reported.
+Controls how named functions are handled:
+
+- When `true`, the rule won't report any named functions such as `function foo() {}`. Anonymous functions such as `const foo = function() {}` will still be reported.
+- When `"only-expressions"`, the rule will allow named function expressions (like `callback(function namedFn() {})`) but will still transform named function declarations (like `function foo() {}`).
+- When `false` (default), all functions will be transformed to arrow functions when safe to do so.
 
 ### `allowObjectProperties`
 
