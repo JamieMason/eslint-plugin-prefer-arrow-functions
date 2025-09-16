@@ -17,4 +17,14 @@ const plugin: TSESLint.FlatConfig.Plugin = {
   rules,
 };
 
+export const configs: TSESLint.FlatConfig.SharedConfigs = {
+  all: {
+    plugins: { 'prefer-arrow-functions': plugin },
+    rules: {
+      'prefer-arrow-functions/prefer-arrow-functions': 'warn',
+    },
+  },
+};
+plugin.configs = configs;
+
 export default plugin;

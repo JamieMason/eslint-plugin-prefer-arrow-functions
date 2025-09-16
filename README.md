@@ -13,9 +13,19 @@ npm install --save-dev eslint eslint-plugin-prefer-arrow-functions
 
 ### Flat
 
-For ESLint 9 and above.
+For ESLint 9 and above, use the shared config `all` in `eslint.config.mjs`:
 
-`eslint.config.mjs`:
+```js
+import pluginJs from '@eslint/js';
+import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions';
+
+export default [
+  pluginJs.configs.all,
+  preferArrowFunctions.configs.all,
+];
+```
+
+Or configure the rule(s) on your own:
 
 ```js
 import pluginJs from '@eslint/js';
