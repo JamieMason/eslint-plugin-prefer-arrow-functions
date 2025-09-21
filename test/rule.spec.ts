@@ -143,6 +143,12 @@ describe('when function is already an arrow function, or cannot be converted to 
         {
           code: 'function Foo() {if (!new.target) throw "Foo() must be called with new";}',
         },
+        {
+          code: 'function withThis(this: HTMLElement, event: Event) { return event.type; }',
+        },
+        {
+          code: 'const withThis = function(this: void, value: number) { return value; };',
+        },
         // assertion functions are unavailable in arrow functions
         {
           code: 'function foo(val: any): asserts val is string {}',
