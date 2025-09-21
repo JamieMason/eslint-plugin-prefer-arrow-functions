@@ -161,32 +161,18 @@ export class Guard {
 
     const [firstParam] = fn.params;
 
-    const getIdentifier = (param: TSESTree.Parameter): TSESTree.Identifier | null => {
-      if (param.type === AST_NODE_TYPES.Identifier) {
-        return param;
-      }
+    if (firstParam.type === AST_NODE_TYPES.Identifier) {
+      return firstParam.name === 'this';
+    }
 
-      if (param.type === AST_NODE_TYPES.AssignmentPattern && param.left.type === AST_NODE_TYPES.Identifier) {
-        return param.left;
-      }
+    if (
+      firstParam.type === AST_NODE_TYPES.TSParameterProperty &&
+      firstParam.parameter.type === AST_NODE_TYPES.Identifier
+    ) {
+      return firstParam.parameter.name === 'this';
+    }
 
-      if (param.type === AST_NODE_TYPES.RestElement && param.argument.type === AST_NODE_TYPES.Identifier) {
-        return param.argument;
-      }
-
-      if (
-        param.type === AST_NODE_TYPES.TSParameterProperty &&
-        param.parameter.type === AST_NODE_TYPES.Identifier
-      ) {
-        return param.parameter;
-      }
-
-      return null;
-    };
-
-    const identifier = getIdentifier(firstParam);
-
-    return identifier?.name === 'this';
+    return false;
   }
 
   containsTokenSequence(sequence: [string, string][], node: TSESTree.Node): boolean {
