@@ -154,6 +154,27 @@ export class Guard {
     return this.containsToken('Identifier', 'arguments', node);
   }
 
+  hasThisParameter(fn: AnyFunction): boolean {
+    if (fn.params.length === 0) {
+      return false;
+    }
+
+    const [firstParam] = fn.params;
+
+    if (firstParam.type === AST_NODE_TYPES.Identifier) {
+      return firstParam.name === 'this';
+    }
+
+    if (
+      firstParam.type === AST_NODE_TYPES.TSParameterProperty &&
+      firstParam.parameter.type === AST_NODE_TYPES.Identifier
+    ) {
+      return firstParam.parameter.name === 'this';
+    }
+
+    return false;
+  }
+
   containsTokenSequence(sequence: [string, string][], node: TSESTree.Node): boolean {
     return this.sourceCode.getTokens(node).some((_, tokenIndex, tokens) => {
       return sequence.every(([expectedType, expectedValue], i) => {
@@ -248,6 +269,7 @@ export class Guard {
       !this.containsArguments(fn) &&
       !this.containsNewDotTarget(fn);
     if (!isSafe) return false;
+    if (this.hasThisParameter(fn)) return false;
     if (this.isIgnored(fn)) return false;
     if (this.options.allowNamedFunctions === true && this.isNamedFunction(fn)) return false;
     if (this.options.allowNamedFunctions === 'only-expressions' && this.isNamedFunctionExpression(fn)) return false;
