@@ -69,7 +69,35 @@ export class Writer {
     const BODY = fn.body;
     const RETURN_TYPE = fn.returnType ? fn.returnType : '';
     const PARAMS = fn.params.join(', ');
-    const arrowFunction = `${ASYNC}${GENERIC}(${PARAMS})${RETURN_TYPE} => ${BODY}`;
+
+    // Preserve a comment after a return type annotation
+    const commentInside = this.sourceCode.getCommentsInside(node);
+    let middleComment = '';
+
+    if (commentInside.length > 0) {
+      // Find a comment between a return type and a function body
+      const returnTypeComment = commentInside.find((candidateComment) => {
+        // Get the start position of a candidate comment
+        const commentStart = candidateComment.range[0];
+
+        /* If a return type exists, use its end position.
+          Otherwise, use the end of the last function parameter */
+        const returnTypeEnd = node.returnType ? node.returnType.range[1] : node.params[node.params.length - 1].range[1];
+
+        // Get the start position of a function body
+        const bodyStart = node.body.range[0];
+
+        // Keep a comment between a return type and a function body
+        return commentStart > returnTypeEnd && commentStart < bodyStart;
+      });
+
+      // If a return type comment exists, get its text
+      if (returnTypeComment) {
+        middleComment = this.sourceCode.getText(returnTypeComment);
+      }
+    }
+
+    const arrowFunction = `${ASYNC}${GENERIC}(${PARAMS})${RETURN_TYPE}${middleComment} => ${BODY}`;
 
     // Check if parentheses are needed due to operator precedence
     if (this.needsParentheses(node)) {
