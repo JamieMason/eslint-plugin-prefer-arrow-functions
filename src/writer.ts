@@ -28,7 +28,21 @@ export class Writer {
   }
 
   getParamsSource(params: TSESTree.Parameter[]): string[] {
-    return params.map((param) => this.sourceCode.getText(param));
+    return params.map((param) => {
+      // Get parameter value
+      const paramText = this.sourceCode.getText(param);
+
+      // Get a comment before parameter if exists
+      const commentsBefore = this.sourceCode.getCommentsBefore(param);
+      const beforeText = commentsBefore.length > 0 ? this.sourceCode.getText(commentsBefore[0]) : '';
+
+      // Get a comment after parameter if exists
+      const commentsAfter = this.sourceCode.getCommentsAfter(param);
+      const afterText = commentsAfter.length > 0 ? this.sourceCode.getText(commentsAfter[0]) : '';
+
+      // Combine all parts
+      return beforeText + paramText + afterText;
+    });
   }
 
   getFunctionName(node: AnyFunction): string {

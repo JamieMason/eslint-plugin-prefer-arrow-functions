@@ -77,6 +77,11 @@ export const validWhenSingleReturnOnly = [
 ];
 
 export const invalidAndHasSingleReturn = [
+  // Test for comment preservation
+  {
+    code: 'var foo = function(bar/*: string */)/*: string */ { return `${bar}`; };',
+    output: 'var foo = (bar/*: string */)/*: string */ => `${bar}`;',
+  },
   // ES6 classes & functions declared in object literals
   {
     code: 'class MyClass { render(a, b) { return 3; } }',
