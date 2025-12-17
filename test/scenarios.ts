@@ -77,11 +77,6 @@ export const validWhenSingleReturnOnly = [
 ];
 
 export const invalidAndHasSingleReturn = [
-  // Test for comment preservation
-  {
-    code: 'var foo = function(bar/*: string */)/*: string */ { return `${bar}`; };',
-    output: 'var foo = (bar/*: string */)/*: string */ => `${bar}`;',
-  },
   // ES6 classes & functions declared in object literals
   {
     code: 'class MyClass { render(a, b) { return 3; } }',
@@ -305,6 +300,70 @@ export const invalidAndHasSingleReturn = [
   {
     code: 'export { foo }; export async function bar() { return false; }',
     output: 'export { foo }; export const bar = async () => false;',
+  },
+
+  /* ##########################
+  # Preserving comments tests #
+  ########################## */
+
+  // Test for a comment after a parameter
+  {
+    code: 'var foo = function(a/*: string */) { return "bar"; }',
+    output: 'var foo = (a/*: string */) => "bar"',
+  },
+
+  // Test for comments after parameters
+  {
+    code: 'var foo = function(a/*: string */, b/*: number */) { return "bar"; }',
+    output: 'var foo = (a/*: string */, b/*: number */) => "bar"',
+  },
+
+  // Test for a comment between a closing parenthesis of parameters and an opening brace of a function body
+  {
+    code: 'var foo = function() /*: boolean */ { return "bar"; }',
+    output: 'var foo = ()/*: boolean */ => "bar"',
+  },
+
+  // Test for a comment with line breaks between a closing parenthesis of parameters and an opening brace of a function body
+  {
+    code: 'var foo = function() /*:\n\tbar\n\tbaz */ { return "qux"; }',
+    output: 'var foo = ()/*: bar baz */ => "qux"',
+  },
+
+  // Test for a comment after a parameter and a comment between parameters and a function body
+  {
+    code: 'var foo = function(a/*: boolean */) /*: string */ { return "bar"; }',
+    output: 'var foo = (a/*: boolean */)/*: string */ => "bar"',
+  },
+
+  // Test for comments after parameters and a comment between parameters and a function body
+  {
+    code: 'var foo = function(a/*: boolean */, b/*: number */) /*: string */ { return "bar"; }',
+    output: 'var foo = (a/*: boolean */, b/*: number */)/*: string */ => "bar"',
+  },
+
+  // Test for a single-line comment after an opening brace of a function body
+  {
+    code: 'var foo = function() { // bar\n\treturn "baz";}',
+    output: 'var foo = () => \n// bar\n"baz"',
+  },
+
+  // Test for a multiline comment after an opening brace of a function body
+  {
+    code: 'var foo = function() { /* bar */ return "baz";}',
+    output: 'var foo = () => \n/* bar */\n"baz"',
+  },
+
+  // Test for a multiline comment with line breaks after an opening brace of a function body
+  {
+    code: 'var foo = function() {\n\t/* bar\n\tbaz */\n\treturn "qux";}',
+    output: 'var foo = () => \n/* bar\n\tbaz */\n"qux"',
+  },
+
+  // Test for a comment between parameters and a function body and a comment after an opening brace of a function body
+  {
+    code: 'var foo = function() /*: string */ { // bar\n\treturn "baz";}',
+    output: 'var foo = ()/*: string */ => \n// bar\n"baz"',
   },
 ];
 

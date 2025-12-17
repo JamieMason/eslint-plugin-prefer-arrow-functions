@@ -17,9 +17,32 @@ export class Writer {
 
   getBodySource({ body }: AnyFunction): string {
     if (this.options.returnStyle !== 'explicit' && this.guard.isBlockStatementWithSingleReturn(body)) {
-      const returnValue = body.body[0].argument;
-      const source = this.sourceCode.getText(returnValue);
-      return returnValue.type === AST_NODE_TYPES.ObjectExpression ? `(${source})` : source;
+      const firstStatementInFunction = body.body[0];
+      const firstStatementValue = firstStatementInFunction.argument;
+
+      // Get a comment after an opening brace and before a first statement in a function
+      const commentBeforeFirstStatement = this.sourceCode.getCommentsBefore(firstStatementInFunction)[0];
+
+      const bodySource = this.sourceCode.getText(firstStatementValue);
+      const wrappedBodySource =
+        firstStatementValue.type === AST_NODE_TYPES.ObjectExpression ? `(${bodySource})` : bodySource;
+
+      // Get a text of a comment after an opening brace in a function if this comment exists
+      if (!commentBeforeFirstStatement) {
+        return wrappedBodySource;
+      }
+      const commentBeforeFirstStatementText = this.sourceCode.getText(commentBeforeFirstStatement);
+
+      /* Return a function body with a comment before it.
+
+      This method adds line breaks before and after a comment. Reasons:
+
+      1. If a comment is single-line, a new line after this comment is required, because
+      a comment in the same line as a first statement of a function is incorrect syntax.
+
+      2. A new line before a comment added, because otherwise JavaScript beautifiers
+      may prettify a comment not in the best way. */
+      return `\n${commentBeforeFirstStatementText}\n${wrappedBodySource}`;
     }
     if (this.guard.hasImplicitReturn(body) && this.options.returnStyle !== 'implicit') {
       return `{ return ${this.sourceCode.getText(body)} }`;
@@ -29,19 +52,19 @@ export class Writer {
 
   getParamsSource(params: TSESTree.Parameter[]): string[] {
     return params.map((param) => {
-      // Get parameter value
-      const paramText = this.sourceCode.getText(param);
+      // Get a parameter value
+      const parameterText = this.sourceCode.getText(param);
 
-      // Get a comment before parameter if exists
-      const commentsBefore = this.sourceCode.getCommentsBefore(param);
-      const beforeText = commentsBefore.length > 0 ? this.sourceCode.getText(commentsBefore[0]) : '';
+      // Get a comment before a parameter if exists
+      const commentBeforeParameter = this.sourceCode.getCommentsBefore(param)[0];
+      const commentBeforeParameterText = commentBeforeParameter ? this.sourceCode.getText(commentBeforeParameter) : '';
 
-      // Get a comment after parameter if exists
-      const commentsAfter = this.sourceCode.getCommentsAfter(param);
-      const afterText = commentsAfter.length > 0 ? this.sourceCode.getText(commentsAfter[0]) : '';
+      // Get a comment after a parameter if exists
+      const commentAfterParameter = this.sourceCode.getCommentsAfter(param)[0];
+      const commentAfterParameterText = commentAfterParameter ? this.sourceCode.getText(commentAfterParameter) : '';
 
-      // Combine all parts
-      return beforeText + paramText + afterText;
+      // Return a parameter with comments before and after it
+      return `${commentBeforeParameterText}${parameterText}${commentAfterParameterText}`;
     });
   }
 
@@ -70,34 +93,67 @@ export class Writer {
     const RETURN_TYPE = fn.returnType ? fn.returnType : '';
     const PARAMS = fn.params.join(', ');
 
-    // Preserve a comment after a return type annotation
-    const commentInside = this.sourceCode.getCommentsInside(node);
-    let middleComment = '';
+    /* Get all comments of a function:
 
-    if (commentInside.length > 0) {
-      // Find a comment between a return type and a function body
-      const returnTypeComment = commentInside.find((candidateComment) => {
+    1. Comments after parameters
+    2. Comments between parameters and a function body
+    3. Comments inside a function body */
+    const allFunctionComments = this.sourceCode.getCommentsInside(node);
+
+    let preservedCommentText = '';
+
+    // Checking if comments exists instead of using the “find()” method everywhere for improving performance
+    if (allFunctionComments[0]) {
+      /* Find a comment between parameters and a function body.
+
+      It’s possible to get the value of the “commentBetweenParametersAndFunctionBodyText”
+      use more simple way, but if a JavaScript function contain not solely a comment
+      between parameters and a function body, eslint-plugin-prefer-arrow-functions may work incorrectly.
+      Therefore, I use the method “getCommentsInside(node)”. */
+      const commentBetweenParametersAndFunctionBody = allFunctionComments.find((candidateComment) => {
         // Get the start position of a candidate comment
-        const commentStart = candidateComment.range[0];
+        const candidateCommentStartPosition = candidateComment.range[0];
 
-        /* If a return type exists, use its end position.
-          Otherwise, use the end of the last function parameter */
-        const returnTypeEnd = node.returnType ? node.returnType.range[1] : node.params[node.params.length - 1].range[1];
+        // Get the position of the closing parenthesis after parameters if parameters exist or no
+        const parametersClosingParenthesisPosition = node.params[0]
+          ? /* Use the old “length()” property instead of the modern method “at()”,
+          because in TypeScript “at()” usage isn’t simple:
+          https://github.com/microsoft/TypeScript/issues/57224 */
+            node.params[node.params.length - 1].range[1] + 1
+          : node.range[0] + 1;
 
-        // Get the start position of a function body
-        const bodyStart = node.body.range[0];
+        // Get the position of the opening brace of a function body
+        const functionBodyOpeningBracePosition = node.body.range[0];
 
-        // Keep a comment between a return type and a function body
-        return commentStart > returnTypeEnd && commentStart < bodyStart;
+        // Keep a comment between parameters and a function body if exists
+        return (
+          candidateCommentStartPosition > parametersClosingParenthesisPosition &&
+          candidateCommentStartPosition < functionBodyOpeningBracePosition
+        );
       });
 
-      // If a return type comment exists, get its text
-      if (returnTypeComment) {
-        middleComment = this.sourceCode.getText(returnTypeComment);
+      /* If a comment between parameters and a function body exists,
+      get its text and convert it to a single-line comment if it’s a multiline */
+      if (commentBetweenParametersAndFunctionBody) {
+        let commentBetweenParametersAndFunctionBodyText = this.sourceCode.getText(
+          commentBetweenParametersAndFunctionBody,
+        );
+
+        // Check if a comment is multiline
+        if (commentBetweenParametersAndFunctionBodyText.includes('\n')) {
+          /* Convert a multiline comment with line breaks to a single-line (replace line breaks with spaces),
+          because JavaScript doesn’t support a multiline comment before a fat arrow. */
+          commentBetweenParametersAndFunctionBodyText = commentBetweenParametersAndFunctionBodyText
+            .split(/\r?\n/)
+            .map((commentLine) => commentLine.trim())
+            .join(' ');
+        }
+
+        preservedCommentText = commentBetweenParametersAndFunctionBodyText;
       }
     }
 
-    const arrowFunction = `${ASYNC}${GENERIC}(${PARAMS})${RETURN_TYPE}${middleComment} => ${BODY}`;
+    const arrowFunction = `${ASYNC}${GENERIC}(${PARAMS})${preservedCommentText}${RETURN_TYPE} => ${BODY}`;
 
     // Check if parentheses are needed due to operator precedence
     if (this.needsParentheses(node)) {
