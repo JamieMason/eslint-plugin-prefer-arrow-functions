@@ -22,12 +22,6 @@
     "@typescript-eslint/types": "^8.19.1",
     "@typescript-eslint/utils": "^8.19.1"
   },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",
     "@eslint/js": "9.17.0",
@@ -39,7 +33,7 @@
     "@typescript-eslint/rule-tester": "8.19.1",
     "@vitest/coverage-v8": "2.1.8",
     "auto-changelog": "2.5.0",
-    "eslint": "9.17.0",
+    "eslint": "9.39.4",
     "globals": "15.14.0",
     "prettier": "3.4.2",
     "release-it": "17.11.0",
@@ -49,6 +43,12 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "files": [
     "dist"
@@ -72,9 +72,11 @@
     "prebuild": "rimraf ./dist",
     "prelint": "npm run format",
     "prepack": "npm run build",
+    "pretest": "npm run typecheck",
     "release": "release-it",
     "test": "vitest run",
-    "test:watch": "vitest watch"
+    "test:watch": "vitest watch",
+    "typecheck": "tsc --project tsconfig.test.json"
   },
   "type": "commonjs"
 }
