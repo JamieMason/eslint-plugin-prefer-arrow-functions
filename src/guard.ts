@@ -1,5 +1,5 @@
-import { TSESTree, AST_NODE_TYPES } from '@typescript-eslint/utils';
-import { AnyFunction, AnyFunctionBody, Scope, GeneratorFunction, NamedFunction, WithTypeParameters } from './config';
+import { AST_NODE_TYPES, TSESTree } from '@typescript-eslint/utils';
+import { AnyFunction, AnyFunctionBody, GeneratorFunction, NamedFunction, Scope, WithTypeParameters } from './config';
 
 export class Guard {
   isTsx: Scope['isTsx'];
@@ -246,7 +246,20 @@ export class Guard {
   }
 
   isIgnored(fn: AnyFunction): boolean {
-    return this.isNamedFunction(fn) && this.options.allowedNames.includes(fn.id.name);
+    if (this.isNamedFunction(fn) && this.options.allowedNames.includes(fn.id.name)) {
+      return true;
+    }
+    if (
+      (fn.parent.type === AST_NODE_TYPES.MethodDefinition ||
+        fn.parent.type === AST_NODE_TYPES.Property ||
+        fn.parent.type === AST_NODE_TYPES.PropertyDefinition) &&
+      !fn.parent.computed &&
+      fn.parent.key.type === AST_NODE_TYPES.Identifier &&
+      this.options.allowedNames.includes(fn.parent.key.name)
+    ) {
+      return true;
+    }
+    return false;
   }
 
   isObjectProperty(fn: AnyFunction): boolean {
