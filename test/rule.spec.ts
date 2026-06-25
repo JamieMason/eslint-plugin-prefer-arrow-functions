@@ -1141,3 +1141,93 @@ describe('issue #39 - outer functions should be transformed even if inner functi
     });
   });
 });
+
+describe('when allowedNames is set', () => {
+  describe('it considers named functions in allowedNames valid', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: 'function foo() { return "bar"; }' },
+        { code: 'var x = function foo() { return "bar"; }' },
+      ].map(withOptions({ allowedNames: ['foo'] })),
+      invalid: [
+        {
+          code: 'function bar() { return "baz"; }',
+          output: 'const bar = () => "baz";',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['foo'] })),
+    });
+  });
+
+  describe('it considers class methods in allowedNames valid', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: 'class MyClass { ngOnInit() { this.x = 1; } }' },
+        { code: 'class MyClass { ngOnInit() { doSomething(); } }' },
+      ].map(withOptions({ allowedNames: ['ngOnInit'], classPropertiesAllowed: true })),
+      invalid: [
+        {
+          code: 'class MyClass { otherMethod() { return 1; } }',
+          output: 'class MyClass { otherMethod = () => 1; }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['ngOnInit'], classPropertiesAllowed: true })),
+    });
+  });
+
+  describe('it considers class field function expressions in allowedNames valid', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: 'class MyClass { ngOnInit = function() { doSomething(); } }' },
+      ].map(withOptions({ allowedNames: ['ngOnInit'] })),
+      invalid: [
+        {
+          code: 'class MyClass { otherMethod = function() { return 1; } }',
+          output: 'class MyClass { otherMethod = () => 1 }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['ngOnInit'] })),
+    });
+  });
+
+  describe('it considers object method properties in allowedNames valid', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: 'var obj = { render: function() { return 1; } }' },
+      ].map(withOptions({ allowedNames: ['render'] })),
+      invalid: [
+        {
+          code: 'var obj = { other: function() { return 1; } }',
+          output: 'var obj = { other: () => 1 }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['render'] })),
+    });
+  });
+
+  describe('it does not match computed keys against allowedNames', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: 'var render = "x"; var obj = { [render]: function() { return 1; } }',
+          output: 'var render = "x"; var obj = { [render]: () => 1 }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['render'] })),
+    });
+  });
+
+  describe('it does not match private methods against allowedNames', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: 'class MyClass { #ngOnInit() { return 1; } }',
+          output: 'class MyClass { #ngOnInit = () => 1; }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['ngOnInit'], classPropertiesAllowed: true })),
+    });
+  });
+});
