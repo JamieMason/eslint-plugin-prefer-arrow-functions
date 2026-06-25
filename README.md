@@ -89,6 +89,25 @@ options are listed in this example.
 An optional array of function names to ignore. When set, the rule won't report named functions such as
 `function foo() {}` whose name is identical to a member of this array.
 
+For compatibility with [@angular-eslint/require-lifecycle-on-prototype](https://github.com/angular-eslint/angular-eslint/blob/main/packages/eslint-plugin/docs/rules/require-lifecycle-on-prototype.md), you can do:
+
+```js
+import { ASTUtils } from "@angular-eslint/utils"
+
+// ...
+  {
+    rules: {
+      'prefer-arrow-functions/prefer-arrow-functions': [
+        'warn',
+        {
+          // ...
+          allowedNames: [...ASTUtils.ANGULAR_LIFECYCLE_METHODS],
+        },
+      ],
+    },
+  },
+```
+
 ### `allowNamedFunctions`
 
 Controls how named functions are handled:
