@@ -1,4 +1,4 @@
-import { AST_NODE_TYPES, TSESTree } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES, TSESLint, TSESTree } from '@typescript-eslint/utils';
 import { AnyFunction, AnyFunctionBody, GeneratorFunction, NamedFunction, Scope, WithTypeParameters } from './config';
 
 export class Guard {
@@ -59,7 +59,26 @@ export class Guard {
     return (
       previousNode?.type === AST_NODE_TYPES.TSDeclareFunction ||
       (previousNode?.type === AST_NODE_TYPES.ExportNamedDeclaration &&
-        previousNode.declaration?.type === AST_NODE_TYPES.TSDeclareFunction)
+        previousNode.declaration?.type === AST_NODE_TYPES.TSDeclareFunction) ||
+      this.isOverloadedClassMethod(fn)
+    );
+  }
+
+  /** A class method with separate overload signatures cannot be rewritten as a class property */
+  private isOverloadedClassMethod(fn: AnyFunction): boolean {
+    const method = fn.parent;
+    if (method.type !== AST_NODE_TYPES.MethodDefinition) return false;
+    const classBody = method.parent;
+    if (classBody.type !== AST_NODE_TYPES.ClassBody) return false;
+    const name = this.getStaticKeyName(method.key, method.computed);
+    if (name === null) return false;
+    return classBody.body.some(
+      (member) =>
+        member !== method &&
+        member.type === AST_NODE_TYPES.MethodDefinition &&
+        member.value.type === AST_NODE_TYPES.TSEmptyBodyFunctionExpression &&
+        member.static === method.static &&
+        this.getStaticKeyName(member.key, member.computed) === name,
     );
   }
 
@@ -81,77 +100,88 @@ export class Guard {
     );
   }
 
-  containsToken(type: string, value: string, node: TSESTree.Node): boolean {
-    return this.sourceCode.getTokens(node).some((token) => token.type === type && token.value === value);
-  }
-
-  containsSuper(node: TSESTree.Node): boolean {
-    return this.containsToken('Keyword', 'super', node);
-  }
-
-  containsThis(node: TSESTree.Node): boolean {
-    return this.containsToken('Keyword', 'this', node);
-  }
-
-  containsThisDirectly(node: TSESTree.Node): boolean {
-    // Check if 'this' is used directly in the current function, excluding nested functions
-    const visit = (currentNode: TSESTree.Node | null | undefined, insideNestedFunction: boolean): boolean => {
-      if (!currentNode || typeof currentNode !== 'object' || !currentNode.type) {
+  /**
+   * Whether any node in fn's own function scope matches. Nested plain functions, class field
+   * initializers and static blocks own their own this/arguments/super/new.target so they are not
+   * searched; arrow functions inherit them from fn so they are. Computed keys and decorators of
+   * nested class members evaluate in the enclosing scope and are searched.
+   */
+  private containsInOwnScope(fn: AnyFunction, isMatch: (node: TSESTree.Node) => boolean): boolean {
+    const isNode = (value: unknown): value is TSESTree.Node =>
+      Boolean(value && typeof value === 'object' && 'type' in value);
+    const visit = (node: TSESTree.Node): boolean => {
+      if (isMatch(node)) return true;
+      if (
+        node !== fn &&
+        (node.type === AST_NODE_TYPES.FunctionDeclaration || node.type === AST_NODE_TYPES.FunctionExpression)
+      ) {
         return false;
       }
-
-      // If we find a 'this' expression and we're not inside a nested function, return true
-      if (currentNode.type === AST_NODE_TYPES.ThisExpression && !insideNestedFunction) {
-        return true;
+      if (node.type === AST_NODE_TYPES.StaticBlock) return false;
+      if (node.type === AST_NODE_TYPES.PropertyDefinition || node.type === AST_NODE_TYPES.AccessorProperty) {
+        return [...node.decorators, node.computed ? node.key : null].some((child) => child !== null && visit(child));
       }
-
-      // Check if current node is a nested function
-      const isNestedFunction =
-        currentNode.type === AST_NODE_TYPES.FunctionDeclaration ||
-        currentNode.type === AST_NODE_TYPES.FunctionExpression ||
-        currentNode.type === AST_NODE_TYPES.ArrowFunctionExpression;
-
-      // If we encounter a nested function, mark that we're inside one for its children
-      const newInsideNestedFunction = insideNestedFunction || (isNestedFunction && currentNode !== node);
-
-      // Skip traversing function body if this is a nested function (not the root)
-      if (isNestedFunction && currentNode !== node) {
-        return false;
-      }
-
-      // Recursively check all child nodes
-      for (const key in currentNode) {
-        if (key === 'parent' || key === 'range' || key === 'loc') {
-          continue; // Skip these properties to avoid circular references
-        }
-
-        const child = currentNode[key as keyof TSESTree.Node];
-
-        if (child && typeof child === 'object') {
-          if (Array.isArray(child)) {
-            for (const item of child) {
-              if (item && typeof item === 'object' && 'type' in item) {
-                if (visit(item as TSESTree.Node, newInsideNestedFunction)) {
-                  return true;
-                }
-              }
-            }
-          } else if ('type' in child) {
-            if (visit(child as TSESTree.Node, newInsideNestedFunction)) {
-              return true;
-            }
+      for (const key in node) {
+        if (key === 'parent' || key === 'range' || key === 'loc') continue;
+        const child = node[key as keyof TSESTree.Node];
+        if (Array.isArray(child)) {
+          for (const item of child) {
+            if (isNode(item) && visit(item)) return true;
           }
+        } else if (isNode(child) && visit(child)) {
+          return true;
         }
       }
-
       return false;
     };
-
-    return visit(node, false);
+    return visit(fn);
   }
 
-  containsArguments(node: TSESTree.Node): boolean {
-    return this.containsToken('Identifier', 'arguments', node);
+  containsOwnThis(fn: AnyFunction): boolean {
+    return this.containsInOwnScope(fn, (node) => node.type === AST_NODE_TYPES.ThisExpression);
+  }
+
+  containsOwnSuper(fn: AnyFunction): boolean {
+    return this.containsInOwnScope(fn, (node) => node.type === AST_NODE_TYPES.Super);
+  }
+
+  containsOwnNewDotTarget(fn: AnyFunction): boolean {
+    return this.containsInOwnScope(
+      fn,
+      (node) =>
+        node.type === AST_NODE_TYPES.MetaProperty && node.meta.name === 'new' && node.property.name === 'target',
+    );
+  }
+
+  containsOwnArguments(fn: AnyFunction): boolean {
+    return this.containsInOwnScope(fn, (node) => {
+      if (node.type !== AST_NODE_TYPES.Identifier || node.name !== 'arguments') return false;
+      const { parent } = node;
+      // a non-computed key or member property named arguments is not the arguments object
+      if (parent.type === AST_NODE_TYPES.MemberExpression && parent.property === node && !parent.computed) {
+        return false;
+      }
+      if (
+        (parent.type === AST_NODE_TYPES.Property ||
+          parent.type === AST_NODE_TYPES.PropertyDefinition ||
+          parent.type === AST_NODE_TYPES.AccessorProperty ||
+          parent.type === AST_NODE_TYPES.MethodDefinition) &&
+        parent.key === node &&
+        !parent.computed
+      ) {
+        return false;
+      }
+      // labels are not variable references
+      if (
+        (parent.type === AST_NODE_TYPES.LabeledStatement ||
+          parent.type === AST_NODE_TYPES.BreakStatement ||
+          parent.type === AST_NODE_TYPES.ContinueStatement) &&
+        parent.label === node
+      ) {
+        return false;
+      }
+      return true;
+    });
   }
 
   hasThisParameter(fn: AnyFunction): boolean {
@@ -175,23 +205,93 @@ export class Guard {
     return false;
   }
 
-  containsTokenSequence(sequence: [string, string][], node: TSESTree.Node): boolean {
-    return this.sourceCode.getTokens(node).some((_, tokenIndex, tokens) => {
-      return sequence.every(([expectedType, expectedValue], i) => {
-        const actual = tokens[tokenIndex + i];
-        return actual && actual.type === expectedType && actual.value === expectedValue;
-      });
+  /** A named function expression whose body references its own name needs that binding, which conversion deletes */
+  isSelfReferencingFunctionExpression(fn: AnyFunction): boolean {
+    if (!this.isNamedFunctionExpression(fn)) return false;
+    const nameVariable = this.sourceCode
+      .getDeclaredVariables(fn)
+      .find((variable) => variable.defs.some((def) => def.type === 'FunctionName' && def.node === fn));
+    return Boolean(nameVariable && nameVariable.references.length > 0);
+  }
+
+  /** The variable created by a named function declaration */
+  private getDeclarationVariable(fn: NamedFunction): TSESLint.Scope.Variable | null {
+    return this.sourceCode.getDeclaredVariables(fn).find((variable) => variable.name === fn.id.name) ?? null;
+  }
+
+  /** Whether a reference runs during initial evaluation of its module/script, rather than inside a deferred function body */
+  private isEagerReference(reference: TSESLint.Scope.Reference): boolean {
+    let node: TSESTree.Node | undefined = reference.identifier.parent;
+    while (node) {
+      if (this.isAnyFunction(node)) return false;
+      node = node.parent;
+    }
+    return true;
+  }
+
+  /** Converting `function foo() {}` to `const foo = () => {}` changes how the name binds: reject uses const cannot satisfy */
+  declarationBindingWouldBreak(fn: AnyFunction): boolean {
+    if (!this.isNamedFunctionDeclaration(fn)) return false;
+    const variable = this.getDeclarationVariable(fn);
+    if (!variable) return false;
+    return (
+      this.isUsedBeforeDefined(fn, variable) ||
+      this.isIncompatibleWithConst(variable) ||
+      this.isBlockLeakUsedOutside(fn, variable)
+    );
+  }
+
+  /** const removes hoisting: code above the declaration which eagerly uses the name would hit the TDZ */
+  private isUsedBeforeDefined(fn: NamedFunction, variable: TSESLint.Scope.Variable): boolean {
+    return variable.references.some(
+      (reference) => reference.identifier.range[0] < fn.range[0] && this.isEagerReference(reference),
+    );
+  }
+
+  /** redeclaring a const is a SyntaxError, assigning to one a TypeError, and an arrow cannot be called with new */
+  private isIncompatibleWithConst(variable: TSESLint.Scope.Variable): boolean {
+    if (variable.defs.length > 1) return true;
+    return variable.references.some((reference) => {
+      const { parent } = reference.identifier;
+      if (parent?.type === AST_NODE_TYPES.NewExpression && parent.callee === reference.identifier) return true;
+      return reference.isWrite();
     });
   }
 
-  containsNewDotTarget(node: TSESTree.Node): boolean {
-    return this.containsTokenSequence(
-      [
-        ['Keyword', 'new'],
-        ['Punctuator', '.'],
-        ['Identifier', 'target'],
-      ],
-      node,
+  /** In sloppy scripts a function declared in a block leaks a binding outside it (Annex B), which const would not */
+  private isBlockLeakUsedOutside(fn: NamedFunction, variable: TSESLint.Scope.Variable): boolean {
+    const scopeType: string = variable.scope.type;
+    if (scopeType === 'global' || scopeType === 'module' || scopeType === 'function') return false;
+    // any unresolved use of the same name elsewhere in the file may reach this declaration via the leaked binding
+    let scope: TSESLint.Scope.Scope | null = variable.scope.upper;
+    while (scope) {
+      if (scope.through.some((reference) => reference.identifier.name === fn.id.name)) return true;
+      scope = scope.upper;
+    }
+    return false;
+  }
+
+  /** Arrow functions cannot be constructed: reject functions in positions which require a constructor */
+  isConstructedValue(fn: AnyFunction): boolean {
+    const { parent } = fn;
+    return (
+      (parent.type === AST_NODE_TYPES.NewExpression && parent.callee === fn) ||
+      ((parent.type === AST_NODE_TYPES.ClassDeclaration || parent.type === AST_NODE_TYPES.ClassExpression) &&
+        parent.superClass === fn)
+    );
+  }
+
+  /** Whether the function already has wrapping parentheses of its own in the source */
+  isParenthesized(node: TSESTree.Node): boolean {
+    const before = this.sourceCode.getTokenBefore(node);
+    const after = this.sourceCode.getTokenAfter(node);
+    return (
+      before !== null &&
+      after !== null &&
+      before.type === 'Punctuator' &&
+      before.value === '(' &&
+      after.type === 'Punctuator' &&
+      after.value === ')'
     );
   }
 
@@ -297,18 +397,28 @@ export class Guard {
       });
   }
 
+  /** this, arguments, super or new.target would refer to something else after conversion to an arrow */
+  private ownBindingsWouldChange(fn: AnyFunction): boolean {
+    // restyling an arrow function cannot change what any of them refer to
+    if (fn.type === AST_NODE_TYPES.ArrowFunctionExpression) return false;
+    return (
+      this.containsOwnThis(fn) ||
+      this.containsOwnSuper(fn) ||
+      this.containsOwnArguments(fn) ||
+      this.containsOwnNewDotTarget(fn) ||
+      this.hasThisParameter(fn)
+    );
+  }
+
   isSafeTransformation(fn: TSESTree.Node): fn is AnyFunction {
-    const isSafe =
-      this.isAnyFunction(fn) &&
-      !this.isGeneratorFunction(fn) &&
-      !this.isAssertionFunction(fn) &&
-      !this.isOverloadedFunction(fn) &&
-      !this.containsThisDirectly(fn) &&
-      !this.containsSuper(fn) &&
-      !this.containsArguments(fn) &&
-      !this.containsNewDotTarget(fn);
-    if (!isSafe) return false;
-    if (this.hasThisParameter(fn)) return false;
+    if (!this.isAnyFunction(fn)) return false;
+    if (this.isGeneratorFunction(fn)) return false;
+    if (this.isAssertionFunction(fn)) return false;
+    if (this.isOverloadedFunction(fn)) return false;
+    if (this.ownBindingsWouldChange(fn)) return false;
+    if (this.isConstructedValue(fn)) return false;
+    if (this.isSelfReferencingFunctionExpression(fn)) return false;
+    if (this.declarationBindingWouldBreak(fn)) return false;
     if (this.isIgnored(fn)) return false;
     if (this.options.allowNamedFunctions === true && this.isNamedFunction(fn)) return false;
     if (this.options.allowNamedFunctions === 'only-expressions' && this.isNamedFunctionExpression(fn)) return false;

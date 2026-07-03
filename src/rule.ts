@@ -1,4 +1,4 @@
-import { TSESTree, ESLintUtils, AST_NODE_TYPES } from '@typescript-eslint/utils';
+import { TSESTree, TSESLint, ESLintUtils, AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { Options, MessageId, MESSAGES_BY_ID, DEFAULT_OPTIONS, AnyFunction, Scope } from './config';
 import { Guard } from './guard';
 import { Writer } from './writer';
@@ -75,11 +75,22 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
         : 'USE_ARROW_WHEN_FUNCTION';
     };
 
+    /** Replace container with new source, unless doing so would silently delete comments */
+    const fixUnlessCommentsDropped = (
+      fn: AnyFunction,
+      getText: () => string,
+      container: TSESTree.Node = fn,
+      alsoEmitted: (TSESTree.Node | null)[] = [],
+    ): TSESLint.ReportFixFunction | undefined =>
+      writer.willDropComments(fn, container, alsoEmitted)
+        ? undefined
+        : (fixer) => fixer.replaceText(container, getText());
+
     return {
       'ExportDefaultDeclaration > FunctionDeclaration': (node: TSESTree.FunctionDeclaration) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: (fixer) => fixer.replaceText(node, writer.writeArrowFunction(node) + ';'),
+            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node) + ';'),
             messageId: getMessageId(node),
             node,
           });
@@ -88,6 +99,8 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       ':matches(ClassProperty, MethodDefinition, Property)[value.type="FunctionExpression"][kind!=/^(get|set|constructor)$/]':
         (node: TSESTree.MethodDefinition | TSESTree.Property) => {
           const fn = node.value;
+          // rewriting a decorated method as a class property would delete the decorator or change its kind
+          if ('decorators' in node && node.decorators.length > 0) return;
           if (guard.isSafeTransformation(fn) && (!guard.isWithinClassBody(fn) || options.classPropertiesAllowed)) {
             let propName: string;
 
@@ -107,13 +120,15 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
 
             const staticModifier = 'static' in node && node.static ? 'static ' : '';
             ctx.report({
-              fix: (fixer) =>
-                fixer.replaceText(
-                  node,
+              fix: fixUnlessCommentsDropped(
+                fn,
+                () =>
                   guard.isWithinClassBody(node)
                     ? `${staticModifier}${propName} = ${writer.writeArrowFunction(fn)};`
                     : `${staticModifier}${propName}: ${writer.writeArrowFunction(fn)}`,
-                ),
+                node,
+                [node.key],
+              ),
               messageId: getMessageId(fn),
               node: fn,
             });
@@ -122,7 +137,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       'ArrowFunctionExpression[body.type!="BlockStatement"]': (node: TSESTree.ArrowFunctionExpression) => {
         if (options.returnStyle === 'explicit' && guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: (fixer) => fixer.replaceText(node, writer.writeArrowFunction(node)),
+            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node)),
             messageId: 'USE_EXPLICIT',
             node,
           });
@@ -131,9 +146,11 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       'ArrowFunctionExpression[body.body.length=1][body.body.0.type="ReturnStatement"]': (
         node: TSESTree.ArrowFunctionExpression,
       ) => {
+        // a bare `return;` has no value which could become an implicit return
+        if (!guard.isBlockStatementWithSingleReturn(node.body)) return;
         if (options.returnStyle === 'implicit' && guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: (fixer) => fixer.replaceText(node, writer.writeArrowFunction(node)),
+            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node)),
             messageId: 'USE_IMPLICIT',
             node,
           });
@@ -144,9 +161,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       ) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: (fixer) => {
-              return fixer.replaceText(node, writer.writeArrowFunction(node));
-            },
+            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node)),
             messageId: getMessageId(node),
             node,
           });
@@ -155,7 +170,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       'FunctionDeclaration[parent.type!="ExportDefaultDeclaration"]': (node: TSESTree.FunctionDeclaration) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: (fixer) => fixer.replaceText(node, writer.writeArrowConstant(node) + ';'),
+            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowConstant(node) + ';'),
             messageId: getMessageId(node),
             node,
           });

@@ -19,7 +19,14 @@ export class Writer {
     if (this.options.returnStyle !== 'explicit' && this.guard.isBlockStatementWithSingleReturn(body)) {
       const returnValue = body.body[0].argument;
       const source = this.sourceCode.getText(returnValue);
-      return returnValue.type === AST_NODE_TYPES.ObjectExpression ? `(${source})` : source;
+      const needsWrapping =
+        // an implicit return of an object literal would parse as a block statement
+        returnValue.type === AST_NODE_TYPES.ObjectExpression ||
+        // an unwrapped comma sequence would continue the enclosing statement
+        returnValue.type === AST_NODE_TYPES.SequenceExpression ||
+        // eg `return {a} = b` where parens around the source are not part of the node
+        source.startsWith('{');
+      return needsWrapping ? `(${source})` : source;
     }
     if (this.guard.hasImplicitReturn(body) && this.options.returnStyle !== 'implicit') {
       return `{ return ${this.sourceCode.getText(body)} }`;
@@ -38,10 +45,10 @@ export class Writer {
   getGenericSource(fn: AnyFunction): string {
     if (!this.guard.hasTypeParameters(fn)) return '';
     const genericSource = this.sourceCode.getText(fn.typeParameters);
-    if (!this.isTsx) return genericSource;
-    const params = fn.typeParameters.params;
-    if (params.length === 1) return `<${params[0].name.name},>`;
-    return genericSource;
+    if (!this.isTsx || fn.typeParameters.params.length > 1) return genericSource;
+    // a single type param in TSX needs a trailing comma so the arrow's generic can't parse as a JSX element
+    const inner = genericSource.slice(1, -1).trimEnd();
+    return `<${inner}${inner.endsWith(',') ? '' : ','}>`;
   }
 
   getReturnType(node: AnyFunction): string | undefined {
@@ -58,7 +65,7 @@ export class Writer {
     const arrowFunction = `${ASYNC}${GENERIC}(${PARAMS})${RETURN_TYPE} => ${BODY}`;
 
     // Check if parentheses are needed due to operator precedence
-    if (this.needsParentheses(node)) {
+    if (this.needsParentheses(node) && !this.guard.isParenthesized(node)) {
       return `(${arrowFunction})`;
     }
 
@@ -70,73 +77,63 @@ export class Writer {
     return `const ${fn.name} = ${this.writeArrowFunction(node)}`;
   }
 
+  /** An arrow function is not valid in every expression position a plain function is: wrap it where needed */
   needsParentheses(node: AnyFunction): boolean {
     const parent = node.parent;
 
     if (!parent) return false;
 
-    // If the function is the right operand of a binary expression or logical expression
-    if (
-      (parent.type === AST_NODE_TYPES.BinaryExpression || parent.type === AST_NODE_TYPES.LogicalExpression) &&
-      parent.right === node
-    ) {
-      return true;
-    }
-
-    // If the function is the left operand of most binary expressions (except assignment-like)
-    if (
-      (parent.type === AST_NODE_TYPES.BinaryExpression || parent.type === AST_NODE_TYPES.LogicalExpression) &&
-      parent.left === node
-    ) {
-      // Don't add parentheses for assignment-like operators
-      if (parent.operator === 'in' || parent.operator === 'instanceof') {
+    switch (parent.type) {
+      // Either operand of a binary or logical expression
+      case AST_NODE_TYPES.BinaryExpression:
+      case AST_NODE_TYPES.LogicalExpression:
+        return parent.left === node || parent.right === node;
+      // The test of a ternary; its consequent and alternate are fine unwrapped (issue #37)
+      case AST_NODE_TYPES.ConditionalExpression:
+        return parent.test === node;
+      // The function being called, e.g. an IIFE without wrapping parens
+      case AST_NODE_TYPES.CallExpression:
+        return parent.callee === node;
+      // Property access on the function, e.g. function() {}.call(null)
+      case AST_NODE_TYPES.MemberExpression:
+        return parent.object === node;
+      // The tag of a tagged template, e.g. function() {}`template`
+      case AST_NODE_TYPES.TaggedTemplateExpression:
+        return parent.tag === node;
+      // The operand of typeof, void, !, delete, await, etc.
+      case AST_NODE_TYPES.UnaryExpression:
+      case AST_NODE_TYPES.AwaitExpression:
         return true;
-      }
-      // For other operators, we typically need parentheses on the left side too
-      return ![AST_NODE_TYPES.AssignmentExpression].includes(parent.type);
+      default:
+        return false;
     }
+  }
 
-    // If the function is the test of a conditional expression (ternary ? part)
-    if (parent.type === AST_NODE_TYPES.ConditionalExpression && parent.test === node) {
-      return true;
-    }
+  /** Whether fixing would silently delete comments, because they lie outside the regions the rewrite copies verbatim */
+  willDropComments(fn: AnyFunction, container: TSESTree.Node = fn, alsoEmitted: (TSESTree.Node | null)[] = []): boolean {
+    const emittedBody =
+      this.options.returnStyle !== 'explicit' && this.guard.isBlockStatementWithSingleReturn(fn.body)
+        ? fn.body.body[0].argument
+        : fn.body;
+    const emitted: (TSESTree.Node | null | undefined)[] = [
+      ...alsoEmitted,
+      fn.typeParameters,
+      ...fn.params,
+      fn.returnType,
+      emittedBody,
+    ];
+    const keptCount = emitted.reduce((sum, node) => (node ? sum + this.countCommentsInside(node) : sum), 0);
+    return this.countCommentsInside(container) > keptCount;
+  }
 
-    // If the function is the consequent of a conditional expression (ternary middle part)
-    // This doesn't need parentheses according to issue #37
-    if (parent.type === AST_NODE_TYPES.ConditionalExpression && parent.consequent === node) {
-      return false;
-    }
-
-    // Don't add parentheses for these contexts (as mentioned in issue #37):
-    // - Right side of assignment =, +=, -=, etc.
-    // - Right side of arrow function =>
-    // - Right side of ternary :
-    // - yield, yield*
-    // - spread ...
-    // - comma operator
-    if (
-      parent.type === AST_NODE_TYPES.AssignmentExpression ||
-      parent.type === AST_NODE_TYPES.ArrowFunctionExpression ||
-      parent.type === AST_NODE_TYPES.YieldExpression ||
-      parent.type === AST_NODE_TYPES.SpreadElement ||
-      parent.type === AST_NODE_TYPES.SequenceExpression
-    ) {
-      return false;
-    }
-
-    // Right side of ternary doesn't need parentheses
-    if (parent.type === AST_NODE_TYPES.ConditionalExpression && parent.alternate === node) {
-      return false;
-    }
-
-    return false;
+  private countCommentsInside(node: TSESTree.Node): number {
+    return this.sourceCode.getCommentsInside(node).length;
   }
 
   getFunctionDescriptor(node: AnyFunction) {
     return {
       body: this.getBodySource(node),
       isAsync: this.guard.isAsyncFunction(node),
-      isGenerator: this.guard.isGeneratorFunction(node),
       isGeneric: this.guard.hasTypeParameters(node),
       name: this.getFunctionName(node),
       generic: this.getGenericSource(node),
