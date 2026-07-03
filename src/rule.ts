@@ -75,22 +75,24 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
         : 'USE_ARROW_WHEN_FUNCTION';
     };
 
-    /** Replace container with new source, unless doing so would silently delete comments */
-    const fixUnlessCommentsDropped = (
+    /** Replace container with new source, unless the rewrite would delete comments, break syntax, or change nothing */
+    const fixUnlessUnsafe = (
       fn: AnyFunction,
       getText: () => string,
       container: TSESTree.Node = fn,
       alsoEmitted: (TSESTree.Node | null)[] = [],
-    ): TSESLint.ReportFixFunction | undefined =>
-      writer.willDropComments(fn, container, alsoEmitted)
-        ? undefined
-        : (fixer) => fixer.replaceText(container, getText());
+    ): TSESLint.ReportFixFunction | undefined => {
+      if (writer.cannotFixSafely(fn, container, alsoEmitted)) return undefined;
+      const replacement = getText();
+      if (replacement === sourceCode.getText(container)) return undefined;
+      return (fixer) => fixer.replaceText(container, replacement);
+    };
 
     return {
       'ExportDefaultDeclaration > FunctionDeclaration': (node: TSESTree.FunctionDeclaration) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node) + ';'),
+            fix: fixUnlessUnsafe(node, () => writer.writeArrowFunction(node) + ';'),
             messageId: getMessageId(node),
             node,
           });
@@ -120,7 +122,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
 
             const staticModifier = 'static' in node && node.static ? 'static ' : '';
             ctx.report({
-              fix: fixUnlessCommentsDropped(
+              fix: fixUnlessUnsafe(
                 fn,
                 () =>
                   guard.isWithinClassBody(node)
@@ -137,7 +139,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       'ArrowFunctionExpression[body.type!="BlockStatement"]': (node: TSESTree.ArrowFunctionExpression) => {
         if (options.returnStyle === 'explicit' && guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node)),
+            fix: fixUnlessUnsafe(node, () => writer.writeArrowFunction(node)),
             messageId: 'USE_EXPLICIT',
             node,
           });
@@ -150,7 +152,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
         if (!guard.isBlockStatementWithSingleReturn(node.body)) return;
         if (options.returnStyle === 'implicit' && guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node)),
+            fix: fixUnlessUnsafe(node, () => writer.writeArrowFunction(node)),
             messageId: 'USE_IMPLICIT',
             node,
           });
@@ -161,7 +163,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       ) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowFunction(node)),
+            fix: fixUnlessUnsafe(node, () => writer.writeArrowFunction(node)),
             messageId: getMessageId(node),
             node,
           });
@@ -170,7 +172,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
       'FunctionDeclaration[parent.type!="ExportDefaultDeclaration"]': (node: TSESTree.FunctionDeclaration) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
-            fix: fixUnlessCommentsDropped(node, () => writer.writeArrowConstant(node) + ';'),
+            fix: fixUnlessUnsafe(node, () => writer.writeArrowConstant(node) + ';'),
             messageId: getMessageId(node),
             node,
           });

@@ -286,29 +286,80 @@ describe('this, arguments, super and new.target belong to the nearest non-arrow 
   });
 });
 
+describe('issue #24 / PR #68 - Flow comment types are preserved by the fix', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [],
+    invalid: [
+      // param and return types in comments are copied verbatim
+      {
+        code: 'var loadData = function(filePath /*: string */) /*: Object */ { return readJson(filePath); };',
+        output: 'var loadData = (filePath /*: string */) /*: Object */ => readJson(filePath);',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      {
+        code: 'function getAge() /*: number */ { return 42; }',
+        output: 'const getAge = () /*: number */ => 42;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // flow generic annotations between the function keyword and the params
+      {
+        code: 'var identity = function /*:: <T> */(t) { return t; };',
+        output: 'var identity = /*:: <T> */(t) => t;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // a newline is not allowed between arrow params and =>, so a multiline
+      // comment there cannot be preserved: report without fixing
+      {
+        code: 'var f = function(a) /*:\n  SomeLongType\n*/ { return a; };',
+        output: null,
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // same restriction applies to multiline TS return type annotations
+      {
+        code: 'function foo(a): {\n  x: number\n} { return { x: a }; }',
+        output: null,
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});
+
 describe('fixes which would delete comments are not applied', () => {
   ruleTester.run('prefer-arrow-functions', rule, {
     valid: [],
     invalid: [
-      // still reported, but left for a human to convert by hand
+      // comments around a single return: keep the block body rather than collapse
       {
         code: 'function foo() { /* license */ return 1; }',
-        output: null,
+        output: 'const foo = () => { /* license */ return 1; };',
         errors: errors('USE_ARROW_WHEN_FUNCTION'),
       },
       {
-        code: 'var foo = function() /* keep */ { return 1; };',
+        code: 'function foo() { /* c */ return 1; }',
+        output: 'const foo = () => { /* c */ return 1; };',
+        options: [{ singleReturnOnly: true }],
+        errors: errors('USE_ARROW_WHEN_SINGLE_RETURN'),
+      },
+      // an arrow which cannot collapse without losing comments is reported but not fixed
+      {
+        code: 'var f = () => { /* c */ return 1; };',
         output: null,
+        options: [{ returnStyle: 'implicit' }],
+        errors: errors('USE_IMPLICIT'),
+      },
+      {
+        code: 'var foo = function() /* keep */ { return 1; };',
+        output: 'var foo = () /* keep */ => 1;',
         errors: errors('USE_ARROW_WHEN_FUNCTION'),
       },
       {
         code: 'function foo() { return 1; /* after */ }',
-        output: null,
+        output: 'const foo = () => { return 1; /* after */ };',
         errors: errors('USE_ARROW_WHEN_FUNCTION'),
       },
       {
         code: 'var foo = function(a /* param */, b) { return a; };',
-        output: null,
+        output: 'var foo = (a /* param */, b) => a;',
         errors: errors('USE_ARROW_WHEN_FUNCTION'),
       },
       // comments in regions the fix copies verbatim are kept, so these still fix
