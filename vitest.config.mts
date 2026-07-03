@@ -4,5 +4,8 @@ export default defineConfig({
   test: {
     include: ['test/**/*.spec.ts'],
     hideSkippedTests: true,
+    coverage: {
+      include: ['src/**'],
+    },
   },
 });
