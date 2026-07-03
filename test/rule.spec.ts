@@ -1145,10 +1145,9 @@ describe('issue #39 - outer functions should be transformed even if inner functi
 describe('when allowedNames is set', () => {
   describe('it considers named functions in allowedNames valid', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
-      valid: [
-        { code: 'function foo() { return "bar"; }' },
-        { code: 'var x = function foo() { return "bar"; }' },
-      ].map(withOptions({ allowedNames: ['foo'] })),
+      valid: [{ code: 'function foo() { return "bar"; }' }, { code: 'var x = function foo() { return "bar"; }' }].map(
+        withOptions({ allowedNames: ['foo'] }),
+      ),
       invalid: [
         {
           code: 'function bar() { return "baz"; }',
@@ -1177,9 +1176,9 @@ describe('when allowedNames is set', () => {
 
   describe('it considers class field function expressions in allowedNames valid', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
-      valid: [
-        { code: 'class MyClass { ngOnInit = function() { doSomething(); } }' },
-      ].map(withOptions({ allowedNames: ['ngOnInit'] })),
+      valid: [{ code: 'class MyClass { ngOnInit = function() { doSomething(); } }' }].map(
+        withOptions({ allowedNames: ['ngOnInit'] }),
+      ),
       invalid: [
         {
           code: 'class MyClass { otherMethod = function() { return 1; } }',
@@ -1192,9 +1191,9 @@ describe('when allowedNames is set', () => {
 
   describe('it considers object method properties in allowedNames valid', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
-      valid: [
-        { code: 'var obj = { render: function() { return 1; } }' },
-      ].map(withOptions({ allowedNames: ['render'] })),
+      valid: [{ code: 'var obj = { render: function() { return 1; } }' }].map(
+        withOptions({ allowedNames: ['render'] }),
+      ),
       invalid: [
         {
           code: 'var obj = { other: function() { return 1; } }',
@@ -1238,9 +1237,9 @@ describe('when allowedNames is set', () => {
 
   describe('it matches private members against allowedNames by their # spelling', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
-      valid: [
-        { code: 'class MyClass { #ngOnInit() { return 1; } }' },
-      ].map(withOptions({ allowedNames: ['#ngOnInit'], classPropertiesAllowed: true })),
+      valid: [{ code: 'class MyClass { #ngOnInit() { return 1; } }' }].map(
+        withOptions({ allowedNames: ['#ngOnInit'], classPropertiesAllowed: true }),
+      ),
       invalid: [
         {
           code: 'class MyClass { #ngOnInit() { return 1; } }',
@@ -1253,9 +1252,9 @@ describe('when allowedNames is set', () => {
 
   describe('it considers accessor class fields in allowedNames valid', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
-      valid: [
-        { code: 'class MyClass { accessor onClick = function() { return 1; } }' },
-      ].map(withOptions({ allowedNames: ['onClick'] })),
+      valid: [{ code: 'class MyClass { accessor onClick = function() { return 1; } }' }].map(
+        withOptions({ allowedNames: ['onClick'] }),
+      ),
       invalid: [
         {
           code: 'class MyClass { accessor other = function() { return 1; } }',

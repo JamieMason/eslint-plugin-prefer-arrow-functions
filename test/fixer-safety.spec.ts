@@ -13,7 +13,10 @@ const ruleTester = new RuleTester();
 
 const errors = (...messageIds: MessageId[]) => messageIds.map((messageId) => ({ messageId }));
 
-const asTsx = { filename: '/some/path/Component.tsx' as const, languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } } };
+const asTsx = {
+  filename: '/some/path/Component.tsx' as const,
+  languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
+};
 
 describe('functions in callee or unary operand positions are parenthesized when fixed', () => {
   ruleTester.run('prefer-arrow-functions', rule, {

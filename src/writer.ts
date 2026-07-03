@@ -163,7 +163,11 @@ export class Writer {
   }
 
   /** Whether fixing would silently delete comments, because they lie outside the regions the rewrite copies verbatim */
-  willDropComments(fn: AnyFunction, container: TSESTree.Node = fn, alsoEmitted: (TSESTree.Node | null)[] = []): boolean {
+  willDropComments(
+    fn: AnyFunction,
+    container: TSESTree.Node = fn,
+    alsoEmitted: (TSESTree.Node | null)[] = [],
+  ): boolean {
     const copiedRanges: TSESTree.Range[] = [];
     for (const node of alsoEmitted) if (node) copiedRanges.push(node.range);
     if (fn.typeParameters) copiedRanges.push(fn.typeParameters.range);
