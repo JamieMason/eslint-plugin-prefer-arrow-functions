@@ -1162,7 +1162,7 @@ describe('when allowedNames is set', () => {
   describe('it considers class methods in allowedNames valid', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
       valid: [
-        { code: 'class MyClass { ngOnInit() { this.x = 1; } }' },
+        { code: 'class MyClass { ngOnInit() { return 1; } }' },
         { code: 'class MyClass { ngOnInit() { doSomething(); } }' },
       ].map(withOptions({ allowedNames: ['ngOnInit'], classPropertiesAllowed: true })),
       invalid: [
@@ -1205,7 +1205,25 @@ describe('when allowedNames is set', () => {
     });
   });
 
-  describe('it does not match computed keys against allowedNames', () => {
+  describe('it matches string-literal and statically computed keys against allowedNames', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: `class MyClass { 'ngOnInit'() { doSomething(); } }` },
+        { code: `class MyClass { ['ngOnInit']() { doSomething(); } }` },
+        { code: 'class MyClass { [`ngOnInit`]() { doSomething(); } }' },
+      ].map(withOptions({ allowedNames: ['ngOnInit'], classPropertiesAllowed: true })),
+      invalid: [],
+    });
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: `var obj = { 'render': function() { return 1; } }` },
+        { code: `var obj = { ['render']: function() { return 1; } }` },
+      ].map(withOptions({ allowedNames: ['render'] })),
+      invalid: [],
+    });
+  });
+
+  describe('it does not match dynamically computed keys against allowedNames', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
       valid: [],
       invalid: [
@@ -1218,9 +1236,11 @@ describe('when allowedNames is set', () => {
     });
   });
 
-  describe('it does not match private methods against allowedNames', () => {
+  describe('it matches private members against allowedNames by their # spelling', () => {
     ruleTester.run('prefer-arrow-functions', rule, {
-      valid: [],
+      valid: [
+        { code: 'class MyClass { #ngOnInit() { return 1; } }' },
+      ].map(withOptions({ allowedNames: ['#ngOnInit'], classPropertiesAllowed: true })),
       invalid: [
         {
           code: 'class MyClass { #ngOnInit() { return 1; } }',
@@ -1228,6 +1248,58 @@ describe('when allowedNames is set', () => {
           errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
         },
       ].map(withOptions({ allowedNames: ['ngOnInit'], classPropertiesAllowed: true })),
+    });
+  });
+
+  describe('it considers accessor class fields in allowedNames valid', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: 'class MyClass { accessor onClick = function() { return 1; } }' },
+      ].map(withOptions({ allowedNames: ['onClick'] })),
+      invalid: [
+        {
+          code: 'class MyClass { accessor other = function() { return 1; } }',
+          output: 'class MyClass { accessor other = () => 1 }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['onClick'] })),
+    });
+  });
+
+  describe('it matches names bound via variables and assignments against allowedNames', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        { code: 'const render = function() { return 1; };' },
+        { code: 'const render = function inner() { return 1; };' },
+        { code: 'let render; render = function() { return 1; };' },
+        { code: 'const obj = {}; obj.render = function() { return 1; };' },
+        { code: `const obj = {}; obj['render'] = function() { return 1; };` },
+      ].map(withOptions({ allowedNames: ['render'] })),
+      invalid: [
+        {
+          code: 'const other = function() { return 1; };',
+          output: 'const other = () => 1;',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ allowedNames: ['render'] })),
+    });
+  });
+
+  describe('it does not exempt arrow functions from returnStyle', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: 'var obj = { render: () => { return 1; } }',
+          output: 'var obj = { render: () => 1 }',
+          errors: [{ messageId: 'USE_IMPLICIT' }],
+        },
+        {
+          code: 'class MyClass { ngOnInit = () => { return 1; } }',
+          output: 'class MyClass { ngOnInit = () => 1 }',
+          errors: [{ messageId: 'USE_IMPLICIT' }],
+        },
+      ].map(withOptions({ allowedNames: ['render', 'ngOnInit'], returnStyle: 'implicit' })),
     });
   });
 });

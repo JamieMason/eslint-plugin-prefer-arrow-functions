@@ -245,21 +245,47 @@ export class Guard {
     return this.isNamedFunction(fn) && fn.parent.type === AST_NODE_TYPES.ExportDefaultDeclaration;
   }
 
+  /** Resolve a member key or member expression property to a name, when statically known */
+  private getStaticKeyName(key: TSESTree.Expression | TSESTree.PrivateIdentifier, computed: boolean): string | null {
+    if (key.type === AST_NODE_TYPES.PrivateIdentifier) return `#${key.name}`;
+    if (!computed && key.type === AST_NODE_TYPES.Identifier) return key.name;
+    if (key.type === AST_NODE_TYPES.Literal) return String(key.value);
+    if (key.type === AST_NODE_TYPES.TemplateLiteral && key.expressions.length === 0) {
+      return key.quasis[0].value.cooked;
+    }
+    return null;
+  }
+
+  /** The name an anonymous function expression is bound to in its enclosing context, when statically known */
+  private getContextualName(fn: TSESTree.FunctionExpression): string | null {
+    const { parent } = fn;
+    switch (parent.type) {
+      case AST_NODE_TYPES.MethodDefinition:
+      case AST_NODE_TYPES.PropertyDefinition:
+      case AST_NODE_TYPES.AccessorProperty:
+        return this.getStaticKeyName(parent.key, parent.computed);
+      case AST_NODE_TYPES.Property:
+        return parent.value === fn ? this.getStaticKeyName(parent.key, parent.computed) : null;
+      case AST_NODE_TYPES.VariableDeclarator:
+        return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
+      case AST_NODE_TYPES.AssignmentExpression:
+        if (parent.right !== fn) return null;
+        if (parent.left.type === AST_NODE_TYPES.Identifier) return parent.left.name;
+        if (parent.left.type === AST_NODE_TYPES.MemberExpression) {
+          return this.getStaticKeyName(parent.left.property, parent.left.computed);
+        }
+        return null;
+      default:
+        return null;
+    }
+  }
+
   isIgnored(fn: AnyFunction): boolean {
-    if (this.isNamedFunction(fn) && this.options.allowedNames.includes(fn.id.name)) {
-      return true;
-    }
-    if (
-      (fn.parent.type === AST_NODE_TYPES.MethodDefinition ||
-        fn.parent.type === AST_NODE_TYPES.Property ||
-        fn.parent.type === AST_NODE_TYPES.PropertyDefinition) &&
-      !fn.parent.computed &&
-      fn.parent.key.type === AST_NODE_TYPES.Identifier &&
-      this.options.allowedNames.includes(fn.parent.key.name)
-    ) {
-      return true;
-    }
-    return false;
+    const names = [
+      this.isNamedFunction(fn) ? fn.id.name : null,
+      fn.type === AST_NODE_TYPES.FunctionExpression ? this.getContextualName(fn) : null,
+    ];
+    return names.some((name) => name !== null && this.options.allowedNames.includes(name));
   }
 
   isObjectProperty(fn: AnyFunction): boolean {
