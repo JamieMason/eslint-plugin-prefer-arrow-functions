@@ -57,7 +57,7 @@ export default [
 
 ### Legacy
 
-For ESLint 8 and below.
+For ESLint 8 (8.57.0 or newer).
 
 Add the plugin to the `plugins` section and the rule to the `rules` section in your `.eslintrc`. The default values for
 options are listed in this example.
