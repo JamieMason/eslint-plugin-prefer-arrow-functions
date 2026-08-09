@@ -230,9 +230,26 @@ export class Guard {
     return true;
   }
 
+  /** An `if`/`else` body or LabelledItem may hold a declaration in sloppy code (Annex B.3.3, B.3.4), but not a const */
+  private hasNoStatementList(fn: NamedFunction): boolean {
+    switch (fn.parent.type) {
+      case AST_NODE_TYPES.Program:
+      case AST_NODE_TYPES.BlockStatement:
+      case AST_NODE_TYPES.StaticBlock:
+      case AST_NODE_TYPES.SwitchCase:
+      case AST_NODE_TYPES.TSModuleBlock:
+      case AST_NODE_TYPES.ExportNamedDeclaration:
+      case AST_NODE_TYPES.ExportDefaultDeclaration:
+        return false;
+      default:
+        return true;
+    }
+  }
+
   /** Converting `function foo() {}` to `const foo = () => {}` changes how the name binds: reject uses const cannot satisfy */
   declarationBindingWouldBreak(fn: AnyFunction): boolean {
     if (!this.isNamedFunctionDeclaration(fn)) return false;
+    if (this.hasNoStatementList(fn)) return true;
     const variable = this.getDeclarationVariable(fn);
     if (!variable) return false;
     return (

@@ -597,3 +597,33 @@ describe('functions whose binding is constructed, extended or has its prototype 
     ],
   });
 });
+
+describe('function declarations outside a statement list are never converted', () => {
+  const asScript = { languageOptions: { parserOptions: { sourceType: 'script' as const } } };
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // sloppy code allows a declaration in these clauses (Annex B.3.3, B.3.4), a const is a SyntaxError
+      { code: 'if (x) function f() {}', ...asScript },
+      { code: 'if (x) {} else function f() {}', ...asScript },
+      { code: 'lbl: function f() {}', ...asScript },
+    ],
+    invalid: [
+      // a declaration inside a block, switch case or namespace has a statement list to live in
+      {
+        code: 'if (x) { function f() { return 1; } }',
+        output: 'if (x) { const f = () => 1; }',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      {
+        code: 'switch (x) { case 1: function f() { return 1; } }',
+        output: 'switch (x) { case 1: const f = () => 1; }',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      {
+        code: 'namespace N { function f() { return 1; } }',
+        output: 'namespace N { const f = () => 1; }',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});
