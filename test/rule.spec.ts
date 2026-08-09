@@ -1374,3 +1374,41 @@ describe('issue #72 - object methods nested inside a class are object properties
     });
   });
 });
+
+describe('class member modifiers survive conversion to a class property', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [],
+    invalid: [
+      {
+        code: 'class A { private render(a) { return a; } }',
+        output: 'class A { private render = (a) => a; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A { public render(a) { return a; } }',
+        output: 'class A { public render = (a) => a; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A extends B { protected override render(a) { return a; } }',
+        output: 'class A extends B { protected override render = (a) => a; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A { public static render(a) { return a; } }',
+        output: 'class A { public static render = (a) => a; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A { render?(a) { return a; } }',
+        output: 'class A { render? = (a) => a; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A { private static override render?(a) { return a; } }',
+        output: 'class A { private static override render? = (a) => a; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+    ].map(withOptions({ classPropertiesAllowed: true })),
+  });
+});

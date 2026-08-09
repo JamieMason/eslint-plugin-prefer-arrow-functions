@@ -120,14 +120,18 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
               propName = sourceCode.getText(node.key);
             }
 
+            const accessibility = 'accessibility' in node && node.accessibility ? `${node.accessibility} ` : '';
             const staticModifier = 'static' in node && node.static ? 'static ' : '';
+            const overrideModifier = 'override' in node && node.override ? 'override ' : '';
+            const optional = 'optional' in node && node.optional ? '?' : '';
+            const modifiers = `${accessibility}${staticModifier}${overrideModifier}`;
             ctx.report({
               fix: fixUnlessUnsafe(
                 fn,
                 () =>
                   guard.isClassMember(node)
-                    ? `${staticModifier}${propName} = ${writer.writeArrowFunction(fn)};`
-                    : `${staticModifier}${propName}: ${writer.writeArrowFunction(fn)}`,
+                    ? `${modifiers}${propName}${optional} = ${writer.writeArrowFunction(fn)};`
+                    : `${modifiers}${propName}${optional}: ${writer.writeArrowFunction(fn)}`,
                 node,
                 [node.key],
               ),
