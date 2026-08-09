@@ -627,3 +627,23 @@ describe('function declarations outside a statement list are never converted', (
     ],
   });
 });
+
+describe('functions with duplicate parameter names are never converted', () => {
+  const asScript = { languageOptions: { parserOptions: { sourceType: 'script' as const } } };
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // sloppy code allows duplicates in a simple parameter list, arrow parameters never do
+      { code: 'function f(a, a) { return a; }', ...asScript },
+      { code: 'var f = function (a, a) { return a; };', ...asScript },
+      { code: 'function f(a, b, a) { return a; }', ...asScript },
+    ],
+    invalid: [
+      {
+        code: 'function f(a, b) { return a; }',
+        output: 'const f = (a, b) => a;',
+        ...asScript,
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});

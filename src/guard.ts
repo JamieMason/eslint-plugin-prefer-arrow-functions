@@ -185,6 +185,13 @@ export class Guard {
     });
   }
 
+  /** Sloppy code may repeat a parameter name, but ArrowParameters are always UniqueFormalParameters */
+  hasDuplicateParams(fn: AnyFunction): boolean {
+    return this.sourceCode
+      .getDeclaredVariables(fn)
+      .some((variable) => variable.defs.filter((def) => def.type === 'Parameter').length > 1);
+  }
+
   hasThisParameter(fn: AnyFunction): boolean {
     if (fn.params.length === 0) {
       return false;
@@ -517,6 +524,7 @@ export class Guard {
     if (this.isAssertionFunction(fn)) return false;
     if (this.isOverloadedFunction(fn)) return false;
     if (this.ownBindingsWouldChange(fn)) return false;
+    if (this.hasDuplicateParams(fn)) return false;
     if (this.isConstructedValue(fn)) return false;
     if (this.isUsedAsConstructor(fn)) return false;
     if (this.isSelfReferencingFunctionExpression(fn)) return false;
