@@ -550,13 +550,10 @@ export class Guard {
     return names.some((name) => name !== null && this.options.allowedNames.includes(name));
   }
 
-  isObjectProperty(fn: AnyFunction): boolean {
-    return this.sourceCode
-      .getAncestors(fn)
-      .reverse()
-      .some((ancestor) => {
-        return ancestor.type === AST_NODE_TYPES.Property;
-      });
+  /** Whether a function, or the member owning it, is a property of an object literal: nesting inside one is not enough */
+  isObjectProperty(node: TSESTree.Node): boolean {
+    const member = this.isAnyFunction(node) ? node.parent : node;
+    return member?.type === AST_NODE_TYPES.Property && member.parent?.type === AST_NODE_TYPES.ObjectExpression;
   }
 
   /** this, arguments, super or new.target would refer to something else after conversion to an arrow */

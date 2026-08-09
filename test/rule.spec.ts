@@ -1412,3 +1412,29 @@ describe('class member modifiers survive conversion to a class property', () => 
     ].map(withOptions({ classPropertiesAllowed: true })),
   });
 });
+
+describe('allowObjectProperties exempts object properties, not everything nested inside one', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      { code: 'const o = { render(a) { return a; } };' },
+      { code: 'const o = { render: function (a) { return a; } };' },
+    ].map(withOptions({ allowObjectProperties: true })),
+    invalid: [
+      {
+        code: 'const o = { render() { function inner() { return 1; } return inner; } };',
+        output: 'const o = { render() { const inner = () => 1; return inner; } };',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'const o = { render() { return function () { return 1; }; } };',
+        output: 'const o = { render() { return () => 1; } };',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'const o = { C: class { m(a) { return a; } } };',
+        output: 'const o = { C: class { m = (a) => a; } };',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+    ].map(withOptions({ allowObjectProperties: true, classPropertiesAllowed: true })),
+  });
+});
