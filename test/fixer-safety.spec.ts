@@ -564,6 +564,7 @@ describe('functions whose binding is constructed, extended or has its prototype 
       { code: 'var Foo = function () {};\nnew Foo();' },
       { code: 'let Foo;\nFoo = function () {};\nnew Foo();' },
       { code: 'const m = {};\nm.Foo = function () {};\nnew m.Foo();' },
+      { code: 'const m = { Foo: function () {} };\nnew m.Foo();' },
       { code: 'var Foo = function () {};\nclass Bar extends Foo {}' },
       // arrow functions have no "prototype" property
       { code: 'function Foo() {}\nFoo.prototype.bar = 1;' },
@@ -729,6 +730,31 @@ describe('methods needed before or through the prototype are never converted to 
         code: 'class C { m(a) { return a; } }\nclass D extends C { other() { return super.toString(); } }',
         output: 'class C { m = (a) => a; }\nclass D extends C { other() { return super.toString(); } }',
         options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});
+
+describe('declarations called before they are reached are never converted', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // const removes the hoisting these rely on: the call runs while foo is still in its TDZ
+      { code: 'const g = () => foo();\ng();\nfunction foo() { return 1; }' },
+      { code: '(() => { foo(); })();\nfunction foo() { return 1; }' },
+      { code: 'const m = { g: () => foo() };\nm.g();\nfunction foo() { return 1; }' },
+    ],
+    invalid: [
+      // the call runs after the declaration is evaluated
+      {
+        code: 'const g = () => foo();\nfunction foo() { return 1; }\ng();',
+        output: 'const g = () => foo();\nconst foo = () => 1;\ng();',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // nothing calls g during initial evaluation
+      {
+        code: 'const g = () => foo();\nfunction foo() { return 1; }',
+        output: 'const g = () => foo();\nconst foo = () => 1;',
         errors: errors('USE_ARROW_WHEN_FUNCTION'),
       },
     ],

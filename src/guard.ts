@@ -228,14 +228,38 @@ export class Guard {
     return this.sourceCode.getDeclaredVariables(fn).find((variable) => variable.name === fn.id.name) ?? null;
   }
 
-  /** Whether a reference runs during initial evaluation of its module/script, rather than inside a deferred function body */
-  private isEagerReference(reference: TSESLint.Scope.Reference): boolean {
-    let node: TSESTree.Node | undefined = reference.identifier.parent;
-    while (node) {
-      if (this.isAnyFunction(node)) return false;
-      node = node.parent;
+  private getEnclosingFunction(node: TSESTree.Node): AnyFunction | null {
+    let ancestor: TSESTree.Node | undefined = node.parent;
+    while (ancestor) {
+      if (this.isAnyFunction(ancestor)) return ancestor;
+      ancestor = ancestor.parent;
     }
-    return true;
+    return null;
+  }
+
+  private isCalledEagerlyBefore(bindingText: string, before: number): boolean {
+    let isCalled = false;
+    this.eachNode(this.sourceCode.ast, (node) => {
+      if (isCalled) return;
+      if (node.type !== AST_NODE_TYPES.CallExpression || node.range[0] >= before) return;
+      if (this.normalizeText(node.callee) !== bindingText) return;
+      if (this.getEnclosingFunction(node)) return;
+      isCalled = true;
+    });
+    return isCalled;
+  }
+
+  /** A body the file calls before reaching the declaration is eager too, following one level only */
+  private isEagerReference(reference: TSESLint.Scope.Reference, fn: NamedFunction): boolean {
+    const enclosingFunction = this.getEnclosingFunction(reference.identifier);
+    if (!enclosingFunction) return true;
+    const { parent } = enclosingFunction;
+    // an immediately invoked function runs where it is written
+    if (parent.type === AST_NODE_TYPES.CallExpression && parent.callee === enclosingFunction) {
+      return parent.range[0] < fn.range[0] && !this.getEnclosingFunction(parent);
+    }
+    const bindingText = this.getBindingText(enclosingFunction);
+    return bindingText !== null && this.isCalledEagerlyBefore(bindingText, fn.range[0]);
   }
 
   /** An `if`/`else` body or LabelledItem may hold a declaration in sloppy code (Annex B.3.3, B.3.4), but not a const */
@@ -270,7 +294,7 @@ export class Guard {
   /** const removes hoisting: code above the declaration which eagerly uses the name would hit the TDZ */
   private isUsedBeforeDefined(fn: NamedFunction, variable: TSESLint.Scope.Variable): boolean {
     return variable.references.some(
-      (reference) => reference.identifier.range[0] < fn.range[0] && this.isEagerReference(reference),
+      (reference) => reference.identifier.range[0] < fn.range[0] && this.isEagerReference(reference, fn),
     );
   }
 
@@ -364,19 +388,26 @@ export class Guard {
     return usages;
   }
 
-  /** The source text a function will be reachable by once converted, when statically known */
-  private getBindingText(fn: AnyFunction): string | null {
-    if (this.isNamedFunctionDeclaration(fn)) return fn.id.name;
-    const { parent } = fn;
-    if (parent.type === AST_NODE_TYPES.VariableDeclarator && parent.init === fn) {
+  /** The source text a value will be reachable by once evaluated, when statically known */
+  private getBindingText(node: TSESTree.Node): string | null {
+    if (node.type === AST_NODE_TYPES.FunctionDeclaration && node.id) return node.id.name;
+    const { parent } = node;
+    if (!parent) return null;
+    if (parent.type === AST_NODE_TYPES.VariableDeclarator && parent.init === node) {
       return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
     }
     if (
       parent.type === AST_NODE_TYPES.AssignmentExpression &&
-      parent.right === fn &&
+      parent.right === node &&
       (parent.left.type === AST_NODE_TYPES.Identifier || parent.left.type === AST_NODE_TYPES.MemberExpression)
     ) {
       return this.normalizeText(parent.left);
+    }
+    if (parent.type === AST_NODE_TYPES.Property && parent.value === node) {
+      const key = this.getStaticKeyName(parent.key, parent.computed);
+      if (key === null || parent.parent.type !== AST_NODE_TYPES.ObjectExpression) return null;
+      const objectText = this.getBindingText(parent.parent);
+      return objectText === null ? null : `${objectText}.${key}`;
     }
     return null;
   }
