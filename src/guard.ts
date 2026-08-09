@@ -353,6 +353,17 @@ export class Guard {
     return null;
   }
 
+  /** `{ __proto__() {} }` defines an own property, where `{ __proto__: value }` sets the prototype (Annex B.3.1) */
+  isProtoShorthandMethod(node: TSESTree.Node): boolean {
+    const member = this.isAnyFunction(node) ? node.parent : node;
+    return (
+      member?.type === AST_NODE_TYPES.Property &&
+      member.method &&
+      !member.computed &&
+      this.getStaticKeyName(member.key, member.computed) === '__proto__'
+    );
+  }
+
   /** The name an anonymous function expression is bound to in its enclosing context, when statically known */
   private getContextualName(fn: TSESTree.FunctionExpression): string | null {
     const { parent } = fn;

@@ -103,6 +103,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           const fn = node.value;
           // rewriting a decorated method as a class property would delete the decorator or change its kind
           if ('decorators' in node && node.decorators.length > 0) return;
+          if (guard.isProtoShorthandMethod(node)) return;
           if (guard.isSafeTransformation(fn) && (!guard.isClassMember(fn) || options.classPropertiesAllowed)) {
             let propName: string;
 

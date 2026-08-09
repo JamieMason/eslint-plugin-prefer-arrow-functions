@@ -525,3 +525,34 @@ describe('functions asserted with as, satisfies or ! are parenthesized when fixe
     ],
   });
 });
+
+describe('shorthand methods named __proto__ are never converted', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // `__proto__: value` sets the prototype (Annex B.3.1) where the method form defines a property
+      { code: 'const o = { __proto__() { return 1; } };' },
+      { code: `const o = { '__proto__'() { return 1; } };` },
+      { code: 'const o = { async __proto__() { return 1; } };' },
+    ],
+    invalid: [
+      // a computed key is exempt from the proto setter form, before and after the fix
+      {
+        code: `const o = { ['__proto__']() { return 1; } };`,
+        output: `const o = { ['__proto__']: () => 1 };`,
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // an existing `__proto__: value` already sets the prototype, so the fix changes nothing
+      {
+        code: 'const o = { __proto__: function () { return 1; } };',
+        output: 'const o = { __proto__: () => 1 };',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // other shorthand methods in the same object still convert
+      {
+        code: 'const o = { __proto__() { return 1; }, other() { return 2; } };',
+        output: 'const o = { __proto__() { return 1; }, other: () => 2 };',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});
