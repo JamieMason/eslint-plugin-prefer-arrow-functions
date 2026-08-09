@@ -647,3 +647,28 @@ describe('functions with duplicate parameter names are never converted', () => {
     ],
   });
 });
+
+describe('methods with decorated parameters are never converted to properties', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // parameter decorators are only legal on a method or constructor, not on an arrow
+      {
+        code: 'class C { render(@Inject() a) { return a; } }',
+        options: [{ classPropertiesAllowed: true }],
+      },
+      {
+        code: 'class C { render(a, @Inject(token) b) { return b; } }',
+        options: [{ classPropertiesAllowed: true }],
+      },
+    ],
+    invalid: [
+      // methods with undecorated parameters in the same class still convert
+      {
+        code: 'class C { render(@Inject() a) { return a; } other(b) { return b; } }',
+        output: 'class C { render(@Inject() a) { return a; } other = (b) => b; }',
+        options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});

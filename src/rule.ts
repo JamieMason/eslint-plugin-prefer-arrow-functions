@@ -105,6 +105,8 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           if ('decorators' in node && node.decorators.length > 0) return;
           if (guard.isProtoShorthandMethod(node)) return;
           if (guard.isSafeTransformation(fn) && (!guard.isClassMember(fn) || options.classPropertiesAllowed)) {
+            // parameter decorators are only legal on a method or constructor, never on an arrow
+            if (fn.params.some((param) => 'decorators' in param && param.decorators.length > 0)) return;
             let propName: string;
 
             if (node.key.type === AST_NODE_TYPES.PrivateIdentifier) {
