@@ -98,52 +98,53 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           });
         }
       },
-      ':matches(ClassProperty, MethodDefinition, Property)[value.type="FunctionExpression"][kind!=/^(get|set|constructor)$/]':
-        (node: TSESTree.MethodDefinition | TSESTree.Property) => {
-          const fn = node.value;
-          // rewriting a decorated method as a class property would delete the decorator or change its kind
-          if ('decorators' in node && node.decorators.length > 0) return;
-          if (guard.isProtoShorthandMethod(node)) return;
-          if (guard.isUnsafeAsClassProperty(node)) return;
-          if (guard.isSafeTransformation(fn) && (!guard.isClassMember(fn) || options.classPropertiesAllowed)) {
-            // parameter decorators are only legal on a method or constructor, never on an arrow
-            if (fn.params.some((param) => 'decorators' in param && param.decorators.length > 0)) return;
-            let propName: string;
+      ':matches(MethodDefinition, Property)[value.type="FunctionExpression"][kind!=/^(get|set|constructor)$/]': (
+        node: TSESTree.MethodDefinition | TSESTree.Property,
+      ) => {
+        const fn = node.value;
+        // rewriting a decorated method as a class property would delete the decorator or change its kind
+        if ('decorators' in node && node.decorators.length > 0) return;
+        if (guard.isProtoShorthandMethod(node)) return;
+        if (guard.isUnsafeAsClassProperty(node)) return;
+        if (guard.isSafeTransformation(fn) && (!guard.isClassMember(fn) || options.classPropertiesAllowed)) {
+          // parameter decorators are only legal on a method or constructor, never on an arrow
+          if (fn.params.some((param) => 'decorators' in param && param.decorators.length > 0)) return;
+          let propName: string;
 
-            if (node.key.type === AST_NODE_TYPES.PrivateIdentifier) {
-              const name = 'name' in node.key ? node.key.name : '';
-              propName = `#${name}`;
-            } else if (node.computed) {
-              // For computed properties like [foo], [Symbol.iterator], etc.
-              propName = `[${sourceCode.getText(node.key)}]`;
-            } else if ('name' in node.key) {
-              // For simple property names
-              propName = node.key.name;
-            } else {
-              // Fallback to source text for other cases
-              propName = sourceCode.getText(node.key);
-            }
-
-            const accessibility = 'accessibility' in node && node.accessibility ? `${node.accessibility} ` : '';
-            const staticModifier = 'static' in node && node.static ? 'static ' : '';
-            const overrideModifier = 'override' in node && node.override ? 'override ' : '';
-            const optional = 'optional' in node && node.optional ? '?' : '';
-            const modifiers = `${accessibility}${staticModifier}${overrideModifier}`;
-            ctx.report({
-              fix: fixUnlessUnsafe(
-                fn,
-                () =>
-                  guard.isClassMember(node)
-                    ? `${modifiers}${propName}${optional} = ${writer.writeArrowFunction(fn)};`
-                    : `${modifiers}${propName}${optional}: ${writer.writeArrowFunction(fn)}`,
-                node,
-                [node.key],
-              ),
-              messageId: getMessageId(fn),
-              node: fn,
-            });
+          if (node.key.type === AST_NODE_TYPES.PrivateIdentifier) {
+            const name = 'name' in node.key ? node.key.name : '';
+            propName = `#${name}`;
+          } else if (node.computed) {
+            // For computed properties like [foo], [Symbol.iterator], etc.
+            propName = `[${sourceCode.getText(node.key)}]`;
+          } else if ('name' in node.key) {
+            // For simple property names
+            propName = node.key.name;
+          } else {
+            // Fallback to source text for other cases
+            propName = sourceCode.getText(node.key);
           }
-        },
+
+          const accessibility = 'accessibility' in node && node.accessibility ? `${node.accessibility} ` : '';
+          const staticModifier = 'static' in node && node.static ? 'static ' : '';
+          const overrideModifier = 'override' in node && node.override ? 'override ' : '';
+          const optional = 'optional' in node && node.optional ? '?' : '';
+          const modifiers = `${accessibility}${staticModifier}${overrideModifier}`;
+          ctx.report({
+            fix: fixUnlessUnsafe(
+              fn,
+              () =>
+                guard.isClassMember(node)
+                  ? `${modifiers}${propName}${optional} = ${writer.writeArrowFunction(fn)};`
+                  : `${modifiers}${propName}${optional}: ${writer.writeArrowFunction(fn)}`,
+              node,
+              [node.key],
+            ),
+            messageId: getMessageId(fn),
+            node: fn,
+          });
+        }
+      },
       'ArrowFunctionExpression[body.type!="BlockStatement"]': (node: TSESTree.ArrowFunctionExpression) => {
         if (options.returnStyle === 'explicit' && guard.isSafeTransformation(node)) {
           ctx.report({
@@ -166,9 +167,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           });
         }
       },
-      'FunctionExpression[parent.type!=/^(ClassProperty|MethodDefinition|Property)$/]': (
-        node: TSESTree.FunctionExpression,
-      ) => {
+      'FunctionExpression[parent.type!=/^(MethodDefinition|Property)$/]': (node: TSESTree.FunctionExpression) => {
         if (guard.isSafeTransformation(node)) {
           ctx.report({
             fix: fixUnlessUnsafe(node, () => writer.writeArrowFunction(node)),

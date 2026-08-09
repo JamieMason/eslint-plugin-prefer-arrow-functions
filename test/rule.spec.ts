@@ -1438,3 +1438,27 @@ describe('allowObjectProperties exempts object properties, not everything nested
     ].map(withOptions({ allowObjectProperties: true, classPropertiesAllowed: true })),
   });
 });
+
+describe('function expressions which are already class properties', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [],
+    invalid: [
+      // the member is already a property, so classPropertiesAllowed has no bearing on it
+      {
+        code: 'class A { foo = function () { return 1; }; }',
+        output: 'class A { foo = () => 1; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A { static foo = function () { return 1; }; }',
+        output: 'class A { static foo = () => 1; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+      {
+        code: 'class A { accessor foo = function () { return 1; }; }',
+        output: 'class A { accessor foo = () => 1; }',
+        errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+      },
+    ],
+  });
+});
