@@ -320,13 +320,10 @@ export class Guard {
       });
   }
 
-  isWithinClassBody(node: TSESTree.Node): boolean {
-    return this.sourceCode
-      .getAncestors(node)
-      .reverse()
-      .some((ancestor) => {
-        return ancestor.type === AST_NODE_TYPES.ClassBody;
-      });
+  /** Whether a function, or the member owning it, is a member of a class body: nesting inside one is not enough (issue #72) */
+  isClassMember(node: TSESTree.Node): boolean {
+    const member = this.isAnyFunction(node) ? node.parent : node;
+    return member?.parent?.type === AST_NODE_TYPES.ClassBody;
   }
 
   isNamedFunction(fn: AnyFunction): fn is NamedFunction {

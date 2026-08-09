@@ -103,7 +103,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           const fn = node.value;
           // rewriting a decorated method as a class property would delete the decorator or change its kind
           if ('decorators' in node && node.decorators.length > 0) return;
-          if (guard.isSafeTransformation(fn) && (!guard.isWithinClassBody(fn) || options.classPropertiesAllowed)) {
+          if (guard.isSafeTransformation(fn) && (!guard.isClassMember(fn) || options.classPropertiesAllowed)) {
             let propName: string;
 
             if (node.key.type === AST_NODE_TYPES.PrivateIdentifier) {
@@ -125,7 +125,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
               fix: fixUnlessUnsafe(
                 fn,
                 () =>
-                  guard.isWithinClassBody(node)
+                  guard.isClassMember(node)
                     ? `${staticModifier}${propName} = ${writer.writeArrowFunction(fn)};`
                     : `${staticModifier}${propName}: ${writer.writeArrowFunction(fn)}`,
                 node,

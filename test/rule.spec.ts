@@ -1302,3 +1302,75 @@ describe('when allowedNames is set', () => {
     });
   });
 });
+
+describe('issue #72 - object methods nested inside a class are object properties, not class properties', () => {
+  describe('it rewrites them as object properties, whatever classPropertiesAllowed is', () => {
+    for (const classPropertiesAllowed of [false, true]) {
+      ruleTester.run('prefer-arrow-functions', rule, {
+        valid: [],
+        invalid: [
+          {
+            code: 'class MyClass { constructor() { this.view = new EditorView({ nodeViews: { code_block(node) { return new NodeView(node); } } }); } }',
+            output:
+              'class MyClass { constructor() { this.view = new EditorView({ nodeViews: { code_block: (node) => new NodeView(node) } }); } }',
+            errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+          },
+          {
+            code: 'class MyClass { handlers = { onClick(e) { return e; } }; }',
+            output: 'class MyClass { handlers = { onClick: (e) => e }; }',
+            errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+          },
+          {
+            code: 'class MyClass { static handlers = { onClick(e) { return e; } }; }',
+            output: 'class MyClass { static handlers = { onClick: (e) => e }; }',
+            errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+          },
+        ].map(withOptions({ classPropertiesAllowed })),
+      });
+    }
+  });
+
+  describe('it leaves the enclosing class method alone when classPropertiesAllowed is false', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: 'class MyClass { run() { return { go(a) { return a; } }; } }',
+          output: 'class MyClass { run() { return { go: (a) => a }; } }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ],
+    });
+  });
+
+  describe('it still rewrites the class methods which contain them', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [],
+      invalid: [
+        {
+          code: 'class MyClass { run() { return { go: (a) => a }; } }',
+          output: 'class MyClass { run = () => ({ go: (a) => a }); }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+        },
+      ].map(withOptions({ classPropertiesAllowed: true })),
+    });
+  });
+
+  describe('it leaves class members as class properties', () => {
+    ruleTester.run('prefer-arrow-functions', rule, {
+      valid: [
+        {
+          code: 'class MyClass { render(a) { return a; } }',
+        },
+      ],
+      invalid: [
+        {
+          code: 'class MyClass { render(a) { return a; } }',
+          output: 'class MyClass { render = (a) => a; }',
+          errors: [{ messageId: 'USE_ARROW_WHEN_FUNCTION' }],
+          options: [{ classPropertiesAllowed: true } as ActualOptions],
+        },
+      ],
+    });
+  });
+});
