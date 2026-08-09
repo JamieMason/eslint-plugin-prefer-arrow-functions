@@ -5,6 +5,7 @@ export class Guard {
   isTsx: Scope['isTsx'];
   options: Scope['options'];
   sourceCode: Scope['sourceCode'];
+  private constructorUsages: Set<string> | null = null;
 
   constructor(scope: Scope) {
     this.isTsx = scope.isTsx;
@@ -281,6 +282,81 @@ export class Guard {
     );
   }
 
+  private eachNode(root: TSESTree.Node, visit: (node: TSESTree.Node) => void): void {
+    const isNode = (value: unknown): value is TSESTree.Node =>
+      Boolean(value && typeof value === 'object' && 'type' in value);
+    const stack: TSESTree.Node[] = [root];
+    while (stack.length > 0) {
+      const node = stack.pop() as TSESTree.Node;
+      visit(node);
+      for (const key in node) {
+        if (key === 'parent' || key === 'range' || key === 'loc' || key === 'tokens' || key === 'comments') continue;
+        const child = node[key as keyof TSESTree.Node];
+        if (Array.isArray(child)) {
+          for (const item of child) if (isNode(item)) stack.push(item);
+        } else if (isNode(child)) {
+          stack.push(child);
+        }
+      }
+    }
+  }
+
+  /** Source text without whitespace, so that `m.Foo` and `m . Foo` compare equal */
+  private normalizeText(node: TSESTree.Node): string {
+    return this.sourceCode.getText(node).replace(/\s+/g, '');
+  }
+
+  /** Every expression in the file which is constructed, extended, or has its prototype read */
+  private getConstructorUsages(): Set<string> {
+    if (this.constructorUsages) return this.constructorUsages;
+    const usages = new Set<string>();
+    this.eachNode(this.sourceCode.ast, (node) => {
+      if (node.type === AST_NODE_TYPES.NewExpression) {
+        usages.add(this.normalizeText(node.callee));
+      } else if (node.type === AST_NODE_TYPES.BinaryExpression && node.operator === 'instanceof') {
+        usages.add(this.normalizeText(node.right));
+      } else if (
+        (node.type === AST_NODE_TYPES.ClassDeclaration || node.type === AST_NODE_TYPES.ClassExpression) &&
+        node.superClass
+      ) {
+        usages.add(this.normalizeText(node.superClass));
+      } else if (
+        node.type === AST_NODE_TYPES.MemberExpression &&
+        !node.computed &&
+        node.property.type === AST_NODE_TYPES.Identifier &&
+        node.property.name === 'prototype'
+      ) {
+        usages.add(this.normalizeText(node.object));
+      }
+    });
+    this.constructorUsages = usages;
+    return usages;
+  }
+
+  /** The source text a function will be reachable by once converted, when statically known */
+  private getBindingText(fn: AnyFunction): string | null {
+    if (this.isNamedFunctionDeclaration(fn)) return fn.id.name;
+    const { parent } = fn;
+    if (parent.type === AST_NODE_TYPES.VariableDeclarator && parent.init === fn) {
+      return parent.id.type === AST_NODE_TYPES.Identifier ? parent.id.name : null;
+    }
+    if (
+      parent.type === AST_NODE_TYPES.AssignmentExpression &&
+      parent.right === fn &&
+      (parent.left.type === AST_NODE_TYPES.Identifier || parent.left.type === AST_NODE_TYPES.MemberExpression)
+    ) {
+      return this.normalizeText(parent.left);
+    }
+    return null;
+  }
+
+  /** Arrows have no [[Construct]] and no "prototype": reject bindings which need either */
+  isUsedAsConstructor(fn: AnyFunction): boolean {
+    const bindingText = this.getBindingText(fn);
+    if (bindingText === null) return false;
+    return this.getConstructorUsages().has(bindingText);
+  }
+
   /** Whether the function already has wrapping parentheses of its own in the source */
   isParenthesized(node: TSESTree.Node): boolean {
     const before = this.sourceCode.getTokenBefore(node);
@@ -425,6 +501,7 @@ export class Guard {
     if (this.isOverloadedFunction(fn)) return false;
     if (this.ownBindingsWouldChange(fn)) return false;
     if (this.isConstructedValue(fn)) return false;
+    if (this.isUsedAsConstructor(fn)) return false;
     if (this.isSelfReferencingFunctionExpression(fn)) return false;
     if (this.declarationBindingWouldBreak(fn)) return false;
     if (this.isIgnored(fn)) return false;

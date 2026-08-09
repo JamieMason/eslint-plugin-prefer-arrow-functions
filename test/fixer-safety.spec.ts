@@ -556,3 +556,44 @@ describe('shorthand methods named __proto__ are never converted', () => {
     ],
   });
 });
+
+describe('functions whose binding is constructed, extended or has its prototype read are never converted', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // arrow functions have no [[Construct]]
+      { code: 'var Foo = function () {};\nnew Foo();' },
+      { code: 'let Foo;\nFoo = function () {};\nnew Foo();' },
+      { code: 'const m = {};\nm.Foo = function () {};\nnew m.Foo();' },
+      { code: 'var Foo = function () {};\nclass Bar extends Foo {}' },
+      // arrow functions have no "prototype" property
+      { code: 'function Foo() {}\nFoo.prototype.bar = 1;' },
+      { code: 'var Foo = function () {};\nFoo.prototype.bar = 1;' },
+      { code: 'const m = {};\nm.Foo = function () {};\nm.Foo.prototype.bar = 1;' },
+      { code: 'function Foo() {}\nconsole.log(Foo.prototype);' },
+      // instanceof reads the constructor's prototype
+      { code: 'function Foo() {}\nconst is = x instanceof Foo;' },
+      { code: 'var Foo = function () {};\nconst is = x instanceof Foo;' },
+    ],
+    invalid: [
+      // a binding which is only called is safe
+      {
+        code: 'var foo = function () { return 1; };\nfoo();',
+        output: 'var foo = () => 1;\nfoo();',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // unrelated constructor usage elsewhere in the file does not block the fix
+      {
+        code: 'var foo = function () { return 1; };\nnew Bar();',
+        output: 'var foo = () => 1;\nnew Bar();',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // assigning onto an existing prototype is about the target, not the function being assigned
+      {
+        code: 'const m = {};\nm.prototype.foo = function () { return 1; };',
+        output: 'const m = {};\nm.prototype.foo = () => 1;',
+        options: [{ disallowPrototype: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});
