@@ -672,3 +672,65 @@ describe('methods with decorated parameters are never converted to properties', 
     ],
   });
 });
+
+describe('methods needed before or through the prototype are never converted to properties', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [
+      // instance fields initialise in source order, so a field above would call it too early
+      {
+        code: 'class C { x = this.m(); m(a) { return a; } }',
+        options: [{ classPropertiesAllowed: true }],
+      },
+      {
+        code: 'class C { x = this.#m(); #m(a) { return a; } }',
+        options: [{ classPropertiesAllowed: true }],
+      },
+      {
+        code: 'class C { static x = this.m(); static m(a) { return a; } }',
+        options: [{ classPropertiesAllowed: true }],
+      },
+      // an own field shadows the prototype, so super.m() no longer reaches the base method
+      {
+        code: 'class C { m(a) { return a; } }\nclass D extends C { m(a) { return super.m(a); } }',
+        options: [{ classPropertiesAllowed: true }],
+      },
+    ],
+    invalid: [
+      // a field below the method is initialised after it
+      {
+        code: 'class C { m(a) { return a; } x = this.m(); }',
+        output: 'class C { m = (a) => a; x = this.m(); }',
+        options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // the constructor body runs after every instance field initialiser
+      {
+        code: 'class C { constructor() { this.m(); } m(a) { return a; } }',
+        output: 'class C { constructor() { this.m(); } m = (a) => a; }',
+        options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // a field initialiser only reaching the method from inside a deferred function is safe
+      {
+        code: 'class C { onClick = () => this.m(); m(a) { return a; } }',
+        output: 'class C { onClick = () => this.m(); m = (a) => a; }',
+        options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // a static field cannot reach an instance method, and vice versa
+      {
+        code: 'class C { static x = this.m(); m(a) { return a; } }',
+        output: 'class C { static x = this.m(); m = (a) => a; }',
+        options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // methods which nothing needs early still convert
+      {
+        code: 'class C { m(a) { return a; } }\nclass D extends C { other() { return super.toString(); } }',
+        output: 'class C { m = (a) => a; }\nclass D extends C { other() { return super.toString(); } }',
+        options: [{ classPropertiesAllowed: true }],
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});

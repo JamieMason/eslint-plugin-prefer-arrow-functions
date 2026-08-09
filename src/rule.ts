@@ -104,6 +104,7 @@ export const preferArrowFunctions = createRule<Options, MessageId>({
           // rewriting a decorated method as a class property would delete the decorator or change its kind
           if ('decorators' in node && node.decorators.length > 0) return;
           if (guard.isProtoShorthandMethod(node)) return;
+          if (guard.isUnsafeAsClassProperty(node)) return;
           if (guard.isSafeTransformation(fn) && (!guard.isClassMember(fn) || options.classPropertiesAllowed)) {
             // parameter decorators are only legal on a method or constructor, never on an arrow
             if (fn.params.some((param) => 'decorators' in param && param.decorators.length > 0)) return;

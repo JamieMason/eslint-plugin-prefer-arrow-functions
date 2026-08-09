@@ -6,6 +6,7 @@ export class Guard {
   options: Scope['options'];
   sourceCode: Scope['sourceCode'];
   private constructorUsages: Set<string> | null = null;
+  private superMemberNames: Set<string> | null = null;
 
   constructor(scope: Scope) {
     this.isTsx = scope.isTsx;
@@ -306,22 +307,28 @@ export class Guard {
     );
   }
 
-  private eachNode(root: TSESTree.Node, visit: (node: TSESTree.Node) => void): void {
+  private getChildNodes(node: TSESTree.Node): TSESTree.Node[] {
     const isNode = (value: unknown): value is TSESTree.Node =>
       Boolean(value && typeof value === 'object' && 'type' in value);
+    const children: TSESTree.Node[] = [];
+    for (const key in node) {
+      if (key === 'parent' || key === 'range' || key === 'loc' || key === 'tokens' || key === 'comments') continue;
+      const child = node[key as keyof TSESTree.Node];
+      if (Array.isArray(child)) {
+        for (const item of child) if (isNode(item)) children.push(item);
+      } else if (isNode(child)) {
+        children.push(child);
+      }
+    }
+    return children;
+  }
+
+  private eachNode(root: TSESTree.Node, visit: (node: TSESTree.Node) => void): void {
     const stack: TSESTree.Node[] = [root];
     while (stack.length > 0) {
       const node = stack.pop() as TSESTree.Node;
       visit(node);
-      for (const key in node) {
-        if (key === 'parent' || key === 'range' || key === 'loc' || key === 'tokens' || key === 'comments') continue;
-        const child = node[key as keyof TSESTree.Node];
-        if (Array.isArray(child)) {
-          for (const item of child) if (isNode(item)) stack.push(item);
-        } else if (isNode(child)) {
-          stack.push(child);
-        }
-      }
+      stack.push(...this.getChildNodes(node));
     }
   }
 
@@ -379,6 +386,53 @@ export class Guard {
     const bindingText = this.getBindingText(fn);
     if (bindingText === null) return false;
     return this.getConstructorUsages().has(bindingText);
+  }
+
+  /** Every `super.name` read in the file, which an instance property would no longer be reachable by */
+  private getSuperMemberNames(): Set<string> {
+    if (this.superMemberNames) return this.superMemberNames;
+    const names = new Set<string>();
+    this.eachNode(this.sourceCode.ast, (node) => {
+      if (node.type !== AST_NODE_TYPES.MemberExpression) return;
+      if (node.object.type !== AST_NODE_TYPES.Super) return;
+      const name = this.getStaticKeyName(node.property, node.computed);
+      if (name !== null) names.add(name);
+    });
+    this.superMemberNames = names;
+    return names;
+  }
+
+  /** Whether `this.name` is read while evaluating this expression, ignoring code deferred into a function */
+  private readsOwnMemberEagerly(node: TSESTree.Node, name: string): boolean {
+    if (this.isAnyFunction(node)) return false;
+    if (
+      node.type === AST_NODE_TYPES.MemberExpression &&
+      node.object.type === AST_NODE_TYPES.ThisExpression &&
+      this.getStaticKeyName(node.property, node.computed) === name
+    ) {
+      return true;
+    }
+    return this.getChildNodes(node).some((child) => this.readsOwnMemberEagerly(child, name));
+  }
+
+  /** Fields initialise in source order before the constructor body, and shadow the prototype: reject methods needed earlier or through super */
+  isUnsafeAsClassProperty(node: TSESTree.Node): boolean {
+    const member = this.isAnyFunction(node) ? node.parent : node;
+    if (member?.type !== AST_NODE_TYPES.MethodDefinition) return false;
+    const classBody = member.parent;
+    if (classBody.type !== AST_NODE_TYPES.ClassBody) return false;
+    const name = this.getStaticKeyName(member.key, member.computed);
+    if (name === null) return false;
+    if (this.getSuperMemberNames().has(name)) return true;
+    return classBody.body
+      .slice(0, classBody.body.indexOf(member))
+      .some(
+        (earlier) =>
+          earlier.type === AST_NODE_TYPES.PropertyDefinition &&
+          earlier.value !== null &&
+          earlier.static === member.static &&
+          this.readsOwnMemberEagerly(earlier.value, name),
+      );
   }
 
   /** Whether the function already has wrapping parentheses of its own in the source */
