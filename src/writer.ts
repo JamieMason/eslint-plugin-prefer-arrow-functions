@@ -144,6 +144,11 @@ export class Writer {
       case AST_NODE_TYPES.UnaryExpression:
       case AST_NODE_TYPES.AwaitExpression:
         return true;
+      // The operand of a type assertion, eg `() => {} as T` would parse `as T` as part of the body
+      case AST_NODE_TYPES.TSAsExpression:
+      case AST_NODE_TYPES.TSSatisfiesExpression:
+      case AST_NODE_TYPES.TSNonNullExpression:
+        return parent.expression === node;
       default:
         return false;
     }

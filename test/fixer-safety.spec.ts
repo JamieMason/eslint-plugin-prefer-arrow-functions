@@ -489,3 +489,39 @@ describe('function declarations whose name is written to are never converted', (
     ],
   });
 });
+
+describe('functions asserted with as, satisfies or ! are parenthesized when fixed', () => {
+  ruleTester.run('prefer-arrow-functions', rule, {
+    valid: [],
+    invalid: [
+      // `() => {} as T` parses the assertion as part of the arrow body, so the arrow needs parens
+      {
+        code: 'const x = function () { console.log(1); } as any;',
+        output: 'const x = (() => { console.log(1); }) as any;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // an implicit return would otherwise re-associate the assertion onto the returned value
+      {
+        code: 'const x = function () { return 1; } as unknown as string;',
+        output: 'const x = (() => 1) as unknown as string;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      {
+        code: 'const x = function () { return 1; } satisfies () => number;',
+        output: 'const x = (() => 1) satisfies () => number;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      {
+        code: 'const x = function () { return 1; }!;',
+        output: 'const x = (() => 1)!;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+      // parens already in the source are not doubled
+      {
+        code: 'const x = (function () { return 1; }) as any;',
+        output: 'const x = (() => 1) as any;',
+        errors: errors('USE_ARROW_WHEN_FUNCTION'),
+      },
+    ],
+  });
+});
